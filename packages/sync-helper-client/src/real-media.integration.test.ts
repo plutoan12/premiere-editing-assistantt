@@ -1,7 +1,8 @@
 import {afterAll,describe,expect,it} from "vitest";
 import {mkdtemp,rm} from "node:fs/promises";import {tmpdir} from "node:os";import {join} from "node:path";import {spawnSync} from "node:child_process";
 import {createHelperServer} from "@pea/native-helper/server";import {syncClips} from "@pea/sync";import {createHelperAudioProvider} from "./index.js";
-const integrationIt=process.env.PEA_FFMPEG_INTEGRATION==="1"?it:it.skip;\ndescribe("generated real-container sync",()=>{
+const integrationIt=process.env.PEA_FFMPEG_INTEGRATION==="1"?it:it.skip;
+describe("generated real-container sync",()=>{
  let dir="";afterAll(async()=>{if(dir)await rm(dir,{recursive:true,force:true});});
  integrationIt("recovers a 250ms delayed take through ffmpeg -> HTTP -> sync engine",async()=>{
   dir=await mkdtemp(join(tmpdir(),"pea-real-media-"));const ref=join(dir,"ref.wav"),take=join(dir,"take.wav"),cache=join(dir,"cache");
