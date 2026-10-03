@@ -3,7 +3,7 @@ import type { FrameRate, MediaTime, Provenance } from '@pea/core';
 export type SyncStrategy = 'timecode' | 'audio' | 'manual';
 export type SyncReason = 'TIMECODE_MATCH' | 'AUDIO_MATCH' | 'MISSING_EVIDENCE'
   | 'INCOMPATIBLE_TIMECODE' | 'SILENCE' | 'INSUFFICIENT_OVERLAP'
-  | 'LOW_CORRELATION' | 'AMBIGUOUS_PEAK' | 'SAMPLE_RATE_MISMATCH' | 'PROVIDER_ERROR';
+  | 'LOW_CORRELATION' | 'AMBIGUOUS_PEAK' | 'SEARCH_BOUNDARY' | 'SAMPLE_RATE_MISMATCH' | 'PROVIDER_ERROR';
 export interface SyncEvidence {
   clipId: string;
   mediaAssetId?: string;
