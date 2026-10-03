@@ -39,11 +39,12 @@ export function resyncArtifacts(artifacts:readonly SourceTimedArtifact[],revised
     const possible=revised.decisions.filter(d=>d.clipId===artifact.clipId);
     const contained=possible.filter(d=>compareTime(d.sourceRange.start,artifact.sourceRange.start)<=0
       && compareTime(end(d.sourceRange),end(artifact.sourceRange))>=0);
+    const partial=possible.filter(d=>compareTime(d.sourceRange.start,end(artifact.sourceRange))<0 && compareTime(end(d.sourceRange),artifact.sourceRange.start)>0 && !contained.includes(d));
     const placements=contained.map(d=>({artifactId:artifact.id,decisionId:d.id,
       range:{start:addTime(d.destination,subtractTime(artifact.sourceRange.start,d.sourceRange.start)),
         duration:{ticks:artifact.sourceRange.duration.ticks,timebase:{...artifact.sourceRange.duration.timebase}}}}));
-    if(placements.length===1) result.mapped.push(placements[0]);
-    else if(placements.length>1) result.conflicted.push({artifactId:artifact.id,placements});
+    if(placements.length===1 && partial.length===0) result.mapped.push(placements[0]);
+    else if(placements.length>1 || (placements.length===1 && partial.length>0)) result.conflicted.push({artifactId:artifact.id,placements});
     else result.unmapped.push({artifactId:artifact.id,reason:possible.length?'SOURCE_TRIMMED':'SOURCE_REMOVED'});
   }
   return result;
