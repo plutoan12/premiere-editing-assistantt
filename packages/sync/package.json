@@ -1,1 +1,22 @@
-{"name":"@pea/sync","version":"0.1.0","private":true,"type":"module","scripts":{"test":"vitest run","typecheck":"tsc --noEmit"},"dependencies":{"@pea/core":"workspace:*","zod":"^4.1.5"},"devDependencies":{"typescript":"^5.9.2","vitest":"^3.2.4"}}
+{
+  "name": "@pea/sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pea/core": "workspace:*",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "@types/node": "^22.18.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
