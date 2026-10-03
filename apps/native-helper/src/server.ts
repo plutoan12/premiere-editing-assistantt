@@ -1,5 +1,6 @@
 import {createServer,type IncomingMessage,type ServerResponse} from "node:http";
-import {randomBytes,timingSafeEqual} from "node:crypto";\nimport {probeMedia,HelperError} from "./ffmpeg.js";
+import {randomBytes,timingSafeEqual} from "node:crypto";
+import {probeMedia,HelperError} from "./ffmpeg.js";
 
 export interface HelperServerOptions { maxBodyBytes?: number }
 export interface HelperServer { host:"127.0.0.1"; port:number; token:string; close():Promise<void> }
