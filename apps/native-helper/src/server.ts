@@ -5,10 +5,13 @@ import type { AddressInfo } from "node:net";
 import type { Transcript } from "@pea/core";
 import { HELPER_PROTOCOL_VERSION, type HelperJob, type SerializedTranscript } from "@pea/helper-protocol";
 import type { TranscriptProvider } from "@pea/transcript";
+import type { MediaProvider } from "@pea/rough-media/wire";
+import { createAudioRoutes } from "./audio-routes.js";
 
 export interface HelperTLS { key: string | Buffer; cert: string | Buffer; }
 export interface HelperServerOptions {
-  provider: TranscriptProvider;
+  provider?: TranscriptProvider;
+  mediaProvider?: MediaProvider;
   helperVersion?: string;
   token?: string;
   tls?: HelperTLS;
@@ -42,7 +45,7 @@ function json(res: ServerResponse, status: number, body: unknown): void {
     "content-length": Buffer.byteLength(payload),
     "access-control-allow-origin": "*",
     "access-control-allow-headers": "authorization,content-type",
-    "access-control-allow-methods": "GET,POST,OPTIONS"
+    "access-control-allow-methods": "GET,POST,DELETE,OPTIONS"
   });
   res.end(payload);
 }
@@ -68,27 +71,32 @@ interface InternalJob {
   controller: AbortController;
   result?: SerializedTranscript;
   error?: HelperJob["error"];
+  task?: Promise<void>;
 }
 
 export async function startHelperServer(options: HelperServerOptions) {
   if (!options.tls && !options.allowInsecureDev) throw new Error("TLS is required outside explicit development mode");
   const token = options.token ?? randomBytes(32).toString("base64url");
   if (!/^[A-Za-z0-9_-]{32,}$/.test(token)) throw new Error("invalid helper session token");
-  const helperVersion = options.helperVersion ?? "0.1.0";
+  const helperVersion = options.helperVersion ?? "0.2.0";
   const maxBody = options.maxBodyBytes ?? 64 * 1024;
   const maxJobs = options.maxJobs ?? 128;
   const jobs = new Map<string, InternalJob>();
+  const audio = options.mediaProvider ? createAudioRoutes(options.mediaProvider, { maxBodyBytes: maxBody }) : undefined;
 
   const handler = async (req: IncomingMessage, res: ServerResponse) => {
     try {
       if (req.method === "OPTIONS") { json(res, 204, {}); return; }
       const url = new URL(req.url ?? "/", "http://127.0.0.1");
       if (req.method === "GET" && url.pathname === "/health") {
-        json(res, 200, { status: "ok", protocolVersion: HELPER_PROTOCOL_VERSION, helperVersion }); return;
+        json(res, 200, { status: "ok", protocolVersion: HELPER_PROTOCOL_VERSION, helperVersion, capabilities: { transcription: !!options.provider, roughCut: !!audio } }); return;
       }
       if (!tokenOK(req.headers.authorization, token)) { json(res, 401, { error: "unauthorized" }); return; }
+      if (audio && await audio.handle(req, res)) return;
 
       if (req.method === "POST" && url.pathname === "/v1/transcriptions") {
+        const provider = options.provider;
+        if (!provider) { json(res, 503, { error: "transcription provider not configured; rough-cut does not require a speech model" }); return; }
         if (jobs.size >= maxJobs) { json(res, 429, { error: "job limit reached" }); return; }
         const body = await readJSON(req, maxBody);
         if (typeof body.mediaAssetId !== "string" || !body.mediaAssetId.trim() || typeof body.mediaPath !== "string" || !body.mediaPath.trim()) {
@@ -98,11 +106,11 @@ export async function startHelperServer(options: HelperServerOptions) {
         const controller = new AbortController();
         const job: InternalJob = { id, status: "queued", progress: 0, controller };
         jobs.set(id, job);
-        queueMicrotask(async () => {
+        job.task = Promise.resolve().then(async () => {
           if (job.status === "cancelled") return;
           job.status = "running"; job.progress = 0.05;
           try {
-            const transcript = await options.provider.transcribe({ mediaAssetId: body.mediaAssetId as string, mediaPath: body.mediaPath as string, signal: controller.signal });
+            const transcript = await provider.transcribe({ mediaAssetId: body.mediaAssetId as string, mediaPath: body.mediaPath as string, signal: controller.signal });
             if (controller.signal.aborted) { job.status = "cancelled"; job.progress = 1; return; }
             job.result = serializeTranscript(transcript); job.status = "completed"; job.progress = 1;
           } catch (error) {
@@ -143,6 +151,10 @@ export async function startHelperServer(options: HelperServerOptions) {
   const endpoint = `${options.tls ? "https" : "http"}://127.0.0.1:${address.port}`;
   return {
     endpoint, token, protocolVersion: HELPER_PROTOCOL_VERSION, helperVersion,
-    stop: () => new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+    stop: async () => {
+      for (const job of jobs.values()) job.controller.abort();
+      await audio?.stop(); await Promise.allSettled([...jobs.values()].map(job => job.task));
+      await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+    }
   };
 }

@@ -1,0 +1,54 @@
+name: Rough Cut Integration
+on:
+  push:
+    branches: [feat/rough-cut-premiere-hybrid]
+  pull_request:
+    paths:
+      - 'packages/rough-*/**'
+      - 'adapters/premiere-rough-cut/**'
+      - 'apps/rough-cut-panel/**'
+      - 'apps/native-helper/**'
+      - 'native/avfoundation/**'
+      - 'scripts/*rough*'
+      - 'scripts/test-avfoundation.py'
+      - '.github/workflows/rough-cut.yml'
+permissions:
+  contents: read
+jobs:
+  workspace:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm --filter @pea/rough-cut-panel build
+      - run: node --check dist/premiere-rough-helper/main.js && node --check dist/premiere-rough-helper/rough-cut.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: premiere-rough-helper-developer-panel
+          path: dist/premiere-rough-helper
+          if-no-files-found: error
+          retention-days: 14
+  macos-native:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: command -v ffmpeg || brew install ffmpeg
+      - run: bash scripts/build-rough-native.sh
+      - run: python3 scripts/test-avfoundation.py --binary "dist/native-$(uname -m)/pea-avfoundation"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: avfoundation-unsigned-test-cli
+          path: dist/native-*/pea-avfoundation
+          if-no-files-found: error
+          retention-days: 14
