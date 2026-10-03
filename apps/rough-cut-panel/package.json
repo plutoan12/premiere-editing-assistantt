@@ -1,0 +1,26 @@
+{
+  "name": "@pea/rough-cut-panel",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "node ../../scripts/build-rough-panel.mjs helper"
+  },
+  "dependencies": {
+    "@pea/core": "workspace:*",
+    "@pea/rough-cut": "workspace:*",
+    "@pea/premiere-rough-cut": "workspace:*",
+    "@pea/rough-media": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "@types/node": "^22.18.0",
+    "esbuild": "^0.25.9"
+  }
+}

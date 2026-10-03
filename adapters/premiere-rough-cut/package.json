@@ -1,0 +1,23 @@
+{
+  "name": "@pea/premiere-rough-cut",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pea/core": "workspace:*",
+    "@pea/rough-cut": "workspace:*",
+    "@pea/rough-media": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "@types/node": "^22.18.0"
+  }
+}

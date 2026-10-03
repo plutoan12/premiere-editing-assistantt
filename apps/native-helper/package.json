@@ -1,0 +1,7 @@
+{
+  "name": "@pea/native-helper", "version": "0.1.0", "private": true, "type": "module",
+  "scripts": { "test": "vitest run", "typecheck": "tsc --noEmit" },
+  "dependencies": { "@pea/core": "workspace:*", "@pea/helper-protocol": "workspace:*", "@pea/transcript": "workspace:*", "@pea/whisper-cpp": "workspace:*", "@pea/rough-media": "workspace:*" },
+  "devDependencies": { "typescript": "^5.9.2", "vitest": "^3.2.4", "@types/node": "^22.18.0", "esbuild": "^0.25.9" },
+  "exports": { ".": "./src/server.ts" }
+}
