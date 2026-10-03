@@ -19,7 +19,7 @@ describe('consolidated workflow regressions',()=>{
    expect(r.groups[0].members[1]).toMatchObject({sourceId:'s2',cameraId:'R',role:'recorder'});
  });
  it('keeps successful playback takes when one provider read fails',async()=>{
-   const source=Float32Array.from({length:256},(_,i)=>(((i*37)%101)/101-.5));
+   let seed=7; const source=Float32Array.from({length:256},()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return (seed/4294967296-.5)*1.6;});
    const provider:AudioSampleProvider={id:'test',version:'1',async read(clip){
      if(clip.clipId==='bad') throw new Error('decode failed');
      const offset=clip.clipId==='good'?20:0;
