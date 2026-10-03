@@ -6,7 +6,7 @@ import { syncClips } from './sync.js';
 /** Music playback alignment deliberately ignores the camera's recording timecode. */
 export function syncPlayback(id:string,master:SyncEvidence,takes:readonly SyncEvidence[],
   options:Omit<SyncOptions,'referenceClipId'|'audioOnly'>={}):Promise<SyncGroup> {
-  return syncClips(id,[master,...takes],{...options,audioProvider:cachedProvider,referenceClipId:master.clipId,audioOnly:true});
+  return syncClips(id,[master,...takes],{...options,referenceClipId:master.clipId,audioOnly:true});
 }
 
 export interface PlaybackTakeResult { takeId:string; group:SyncGroup }
@@ -25,7 +25,7 @@ export async function syncPlaybackBatch(id:string,master:SyncEvidence,takes:read
     }
   }:undefined;
   for(const take of takes) {
-    const group=await syncClips(`${id}:${take.clipId}`,[master,take],{...options,referenceClipId:master.clipId,audioOnly:true});
+    const group=await syncClips(`${id}:${take.clipId}`,[master,take],{...options,audioProvider:cachedProvider,referenceClipId:master.clipId,audioOnly:true});
     results.push({takeId:take.clipId,group});
   }
   return results;
