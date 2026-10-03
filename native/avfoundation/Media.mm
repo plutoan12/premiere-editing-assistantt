@@ -18,7 +18,7 @@ using Clock=std::chrono::steady_clock;
 void require(bool ok,const char* error){if(!ok)throw std::runtime_error(error);}
 NSString* text(id x){require([x isKindOfClass:[NSString class]],"string required");return (NSString*)x;}
 long long integer(id x,long long low,long long high){require([x isKindOfClass:[NSNumber class]]&&CFGetTypeID((__bridge CFTypeRef)x)!=CFBooleanGetTypeID(),"integer required");double d=[x doubleValue];require(std::isfinite(d)&&std::floor(d)==d&&d>=low&&d<=high,"integer outside limits");return [x longLongValue];}
-NSDictionary* object(const std::string& input){require(input.size()<=65536,"native request limit");NSData*d=[NSData dataWithBytes:input.data() length:input.size()];id x=[NSJSONSerialization JSONObjectWithData:d options:0 error:nullptr];require([x isKindOfClass:[NSDictionary class]],"JSON object required");return x;}
+NSDictionary* object(const std::string& input,size_t limit=65536){require(input.size()<=limit,"native JSON size limit");NSData*d=[NSData dataWithBytes:input.data() length:input.size()];id x=[NSJSONSerialization JSONObjectWithData:d options:0 error:nullptr];require([x isKindOfClass:[NSDictionary class]],"JSON object required");return x;}
 std::string json(id value){NSError*e=nil;NSData*d=[NSJSONSerialization dataWithJSONObject:value options:NSJSONWritingSortedKeys error:&e];require(d!=nil,"JSON serialization failed");return std::string((const char*)d.bytes,d.length);}
 std::string errorJson(const char* message){return json(@{@"error":[NSString stringWithUTF8String:message]?:@"native failure"});}
 struct File { NSString* path; NSString* identity; };
@@ -101,13 +101,13 @@ std::string request(const std::string&input){@autoreleasepool{try{
  NSDictionary*q=object(input);NSString*op=text(q[@"op"]);
  if([op isEqualToString:@"probe"]||[op isEqualToString:@"window"]){
   std::lock_guard<std::mutex>lock(jobMutex);require(jobId.empty(),"native job busy; cancel/delete previous job");cancelled=false;jobId=std::to_string(++serial);state="running";result.clear();error.clear();
-  worker=std::thread([input]{@autoreleasepool{const auto value=perform(input,cancelled);std::lock_guard<std::mutex>lock(jobMutex);if(cancelled){state="cancelled";}else{auto x=object(value);if(x[@"error"]){state="failed";error=value;}else{state="completed";result=value;}}}});
+  worker=std::thread([input]{@autoreleasepool{const auto value=perform(input,cancelled);std::lock_guard<std::mutex>lock(jobMutex);if(cancelled){state="cancelled";}else{try{auto x=object(value,3*1024*1024);if(x[@"error"]){state="failed";error=value;}else{state="completed";result=value;}}catch(const std::exception&e){state="failed";error=errorJson(e.what());}}}});
   return json(@{@"jobId":[NSString stringWithUTF8String:jobId.c_str()]});
  }
  std::string id=[text(q[@"jobId"]) UTF8String];{std::lock_guard<std::mutex>lock(jobMutex);require(!jobId.empty()&&jobId==id,"native job not found");}
  if([op isEqualToString:@"cancel"]){cancelled=true;return "{}";}
  if([op isEqualToString:@"delete"]){shutdown();return "{}";}
  require([op isEqualToString:@"poll"],"unknown native control operation");std::lock_guard<std::mutex>lock(jobMutex);
- NSMutableDictionary*out=[@{@"status":[NSString stringWithUTF8String:state.c_str()]} mutableCopy];if(state=="completed")out[@"result"]=object(result);if(state=="failed")out[@"error"]=object(error)[@"error"];return json(out);
+ NSMutableDictionary*out=[@{@"status":[NSString stringWithUTF8String:state.c_str()]} mutableCopy];if(state=="completed")out[@"result"]=object(result,3*1024*1024);if(state=="failed")out[@"error"]=object(error)[@"error"];return json(out);
  }catch(const std::exception&e){return errorJson(e.what());}}}
 }
