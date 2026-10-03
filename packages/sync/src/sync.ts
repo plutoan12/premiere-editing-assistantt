@@ -1,6 +1,6 @@
 import type { MediaTime } from '@pea/core';
 import type { AudioSampleProvider, AudioSampleWindow } from './audio-provider.js';
-import { validateAudioWindow } from './audio-provider.js';
+import { snapshotAudioWindow, validateAudioWindow } from './audio-provider.js';
 import type { AudioCorrelationOptions } from './audio-correlation.js';
 import { correlateAudio } from './audio-correlation.js';
 import type { SyncCandidate, SyncEvidence, SyncGroup } from './types.js';
@@ -43,7 +43,7 @@ export async function syncClips(id:string,items:readonly SyncEvidence[],options:
     if(!value) {
       value=awaitWithAbort(Promise.resolve().then(()=>{throwIfAborted(options.signal);
         return provider!.read(clip,{signal:options.signal,providerVersion:provider!.version});})
-        .then(w=>{throwIfAborted(options.signal);validateAudioWindow(w);return w;}),options.signal);
+        .then(w=>{throwIfAborted(options.signal);validateAudioWindow(w);return snapshotAudioWindow(w);}),options.signal);
       cache.set(clip.clipId,value);
     }
     return value;
