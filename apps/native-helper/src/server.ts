@@ -61,9 +61,13 @@ async function readJSON(req: IncomingMessage, maxBytes: number): Promise<Record<
 function publicJob(job: InternalJob): HelperJob {
   return { id: job.id, status: job.status, progress: job.progress, ...(job.result ? { result: { transcript: job.result } } : {}), ...(job.error ? { error: job.error } : {}) };
 }
-interface InternalJob extends HelperJob {
+interface InternalJob {
+  id: string;
+  status: HelperJob["status"];
+  progress: number;
   controller: AbortController;
   result?: SerializedTranscript;
+  error?: HelperJob["error"];
 }
 
 export async function startHelperServer(options: HelperServerOptions) {
