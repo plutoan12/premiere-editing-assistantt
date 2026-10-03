@@ -1,0 +1,1 @@
+import {describe,it,expect} from "vitest"; import {ConfidenceSchema} from "./analysis.js"; describe("confidence",()=>{it("is bounded to 0..1",()=>{expect(()=>ConfidenceSchema.parse(1.1)).toThrow(); expect(ConfidenceSchema.parse(0.5)).toBe(0.5)})});

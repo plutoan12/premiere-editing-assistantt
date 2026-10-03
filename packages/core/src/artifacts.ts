@@ -1,0 +1,1 @@
+import { z } from "zod"; export const ArtifactSchema=z.object({id:z.string(),kind:z.string(),version:z.number().int().positive(),status:z.enum(["candidate","valid","failed"]),uri:z.string().optional()}); export type Artifact=z.infer<typeof ArtifactSchema>; export function promoteArtifact(candidate:Artifact,current?:Artifact){ return candidate.status==="valid"?candidate:current; }
