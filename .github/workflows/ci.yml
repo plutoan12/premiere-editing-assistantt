@@ -13,6 +13,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)\n      - run: ffmpeg -version | head -1\n      - run: pnpm install --no-frozen-lockfile
+      - run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - run: ffmpeg -version | head -1
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm test
       - run: pnpm typecheck
