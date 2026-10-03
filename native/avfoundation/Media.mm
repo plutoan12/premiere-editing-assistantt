@@ -21,6 +21,14 @@ long long integer(id x,long long low,long long high){require([x isKindOfClass:[N
 NSDictionary* object(const std::string& input,size_t limit=65536){require(input.size()<=limit,"native JSON size limit");NSData*d=[NSData dataWithBytes:input.data() length:input.size()];id x=[NSJSONSerialization JSONObjectWithData:d options:0 error:nullptr];require([x isKindOfClass:[NSDictionary class]],"JSON object required");return x;}
 std::string json(id value){NSError*e=nil;NSData*d=[NSJSONSerialization dataWithJSONObject:value options:NSJSONWritingSortedKeys error:&e];require(d!=nil,"JSON serialization failed");return std::string((const char*)d.bytes,d.length);}
 std::string errorJson(const char* message){return json(@{@"error":[NSString stringWithUTF8String:message]?:@"native failure"});}
+// Payload-free marker buffers are control messages, not video frames or silent PCM.
+// Nonterminal empty edits are rejected; final markers do not add media time.
+bool controlMarker(CMSampleBufferRef b){
+ const auto empty=CMGetAttachment(b,kCMSampleBufferAttachmentKey_EmptyMedia,nullptr);
+ const auto permanent=CMGetAttachment(b,kCMSampleBufferAttachmentKey_PermanentEmptyMedia,nullptr);
+ const bool gap=empty&&CFEqual(empty,kCFBooleanTrue)&&!(permanent&&CFEqual(permanent,kCFBooleanTrue));
+ return CMSampleBufferIsValid(b)&&CMSampleBufferGetNumSamples(b)==0&&!CMSampleBufferGetDataBuffer(b)&&!CMSampleBufferGetImageBuffer(b)&&!gap;
+}
 struct File { NSString* path; NSString* identity; };
 File localFile(NSString* path){
  const char*s=path.UTF8String;require(s&&path.length>0&&s[0]=='/'&&strlen(s)==[path lengthOfBytesUsingEncoding:NSUTF8StringEncoding],"absolute local path required");
@@ -55,10 +63,11 @@ Source source(NSString* path){
  return {f,a,v,au,dims.width,dims.height,(int)audio->mChannelsPerFrame,(int)audio->mSampleRate,n,d};
 }
 long long videoFrames(Source&s,std::atomic_bool&cancel,Clock::time_point deadline){
- NSError*e=nil;AVAssetReader*r=[[AVAssetReader alloc]initWithAsset:s.asset error:&e];require(r!=nil,"video reader unavailable");AVAssetReaderTrackOutput*out=[AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:s.video outputSettings:nil];require([r canAddOutput:out],"video reader output unavailable");[r addOutput:out];require([r startReading],"video reader failed");CancelReader watch(r,cancel,deadline);std::vector<CMTime>times;
+ NSError*e=nil;AVAssetReader*r=[[AVAssetReader alloc]initWithAsset:s.asset error:&e];require(r!=nil,"video reader unavailable");AVAssetReaderTrackOutput*out=[AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:s.video outputSettings:nil];require([r canAddOutput:out],"video reader output unavailable");[r addOutput:out];require([r startReading],"video reader failed");CancelReader watch(r,cancel,deadline);std::vector<CMTime>times;int markers=0;
  while(true){
   check(cancel,deadline);CMSampleBufferRef b=[out copyNextSampleBuffer];if(!b)break;
   const auto count=CMSampleBufferGetNumSamples(b);
+  if(count==0){const bool marker=controlMarker(b);CFRelease(b);require(marker&&++markers<=64,"unsupported empty video edit/control marker");continue;}
   if(count<1||count>14401||(size_t)count+times.size()>14401){CFRelease(b);throw std::runtime_error("invalid video sample count: "+std::to_string(count));}
   // Stored-format readers may group many video frames in one buffer.
   // This API expands shared timing entries into each sample's exact timestamps.
@@ -77,9 +86,11 @@ NSData* audioRead(Source&s,long long first,long long count,std::atomic_bool&canc
  NSError*e=nil;AVAssetReader*r=[[AVAssetReader alloc]initWithAsset:s.asset error:&e];require(r!=nil,"audio reader unavailable");
  NSDictionary*settings=@{AVFormatIDKey:@(kAudioFormatLinearPCM),AVSampleRateKey:@48000,AVNumberOfChannelsKey:@(s.channels),AVLinearPCMBitDepthKey:@32,AVLinearPCMIsFloatKey:@YES,AVLinearPCMIsBigEndianKey:@NO,AVLinearPCMIsNonInterleaved:@NO};
  AVAssetReaderTrackOutput*out=[AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:s.audio outputSettings:settings];require([r canAddOutput:out],"PCM output unsupported");[r addOutput:out];require([r startReading],"PCM reader failed");CancelReader watch(r,cancel,deadline);
- NSMutableData*result=[NSMutableData dataWithLength:entire?0:(NSUInteger)(count*s.channels*4)];long long cursor=0,copied=0;
+ NSMutableData*result=[NSMutableData dataWithLength:entire?0:(NSUInteger)(count*s.channels*4)];long long cursor=0,copied=0;int markers=0;
  while(true){check(cancel,deadline);CMSampleBufferRef b=[out copyNextSampleBuffer];if(!b)break;
-  auto frames=CMSampleBufferGetNumSamples(b);CMTime pts=CMSampleBufferGetPresentationTimeStamp(b);CMBlockBufferRef block=CMSampleBufferGetDataBuffer(b);
+  auto frames=CMSampleBufferGetNumSamples(b);
+  if(frames==0){const bool marker=controlMarker(b);CFRelease(b);require(marker&&++markers<=64,"unsupported empty audio edit/control marker");continue;}
+  CMTime pts=CMSampleBufferGetPresentationTimeStamp(b);CMBlockBufferRef block=CMSampleBufferGetDataBuffer(b);
   bool valid=CMTIME_IS_NUMERIC(pts)&&frames>0&&frames<=480000&&block&&CMBlockBufferGetDataLength(block)==(size_t)(frames*s.channels*4);
   if(!valid){CFRelease(b);throw std::runtime_error("invalid PCM sample buffer");}
   long long start=CMTimeConvertScale(pts,48000,kCMTimeRoundingMethod_RoundHalfAwayFromZero).value;
