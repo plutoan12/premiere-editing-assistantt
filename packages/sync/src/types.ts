@@ -8,6 +8,8 @@ export interface SyncEvidence {
   clipId: string;
   mediaAssetId?: string;
   sourceId?: string;
+  cameraId?: string;
+  role?: 'camera' | 'recorder' | 'playback';
   /** Unwrapped physical frame count at clip-local time zero (NOT a HHMMSSFF integer). */
   timecodeTicks?: bigint;
   frameRate?: FrameRate;
@@ -39,6 +41,8 @@ export interface SyncMember {
   clipId: string;
   mediaAssetId?: string;
   sourceId?: string;
+  cameraId?: string;
+  role?: SyncEvidence['role'];
   /** Placement relative to reference clip zero. Negative values are valid. */
   offset: MediaTime;
   /** Compatibility alias; interpret ONLY with offset.timebase. */
@@ -70,7 +74,7 @@ export function validateEvidence(items: readonly SyncEvidence[], minimum = 2): v
   }
 }
 export function makeMember(item: SyncEvidence, offset: MediaTime): SyncMember {
-  return { clipId: item.clipId, mediaAssetId: item.mediaAssetId, sourceId: item.sourceId,
+  return { clipId: item.clipId, mediaAssetId: item.mediaAssetId, sourceId: item.sourceId, cameraId: item.cameraId, role: item.role,
     offset: { ticks: offset.ticks, timebase: { ...offset.timebase } }, offsetTicks: offset.ticks };
 }
 export function throwIfAborted(signal?: AbortSignal): void {
