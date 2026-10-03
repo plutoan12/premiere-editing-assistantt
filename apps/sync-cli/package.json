@@ -1,0 +1,26 @@
+{
+  "name": "@pea/sync-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@pea/core": "workspace:*",
+    "@pea/sync": "workspace:*",
+    "@pea/media-ffmpeg": "workspace:*",
+    "@pea/premiere": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "tsx": "^4.20.6"
+  }
+}
