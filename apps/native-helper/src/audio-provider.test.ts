@@ -5,7 +5,7 @@ import type {ProcessResult,RunOptions} from './process-runner.js';
 describe('FFmpeg audio provider',()=>{
  it('builds bounded mono f32le decode argv without a shell',()=>{
   const args=buildAudioArgs('/tmp/a b.mov',8000,16000n,4000);
-  expect(args).toContain('mono'); expect(args).toContain('f32le'); expect(args.slice(-2)).toEqual(['pipe:1']);
+  expect(args).toContain('-ac'); expect(args[args.indexOf('-ac')+1]).toBe('1'); expect(args).toContain('f32le'); expect(args.slice(-2)).toEqual(['pipe:1']);
   expect(args.join(' ')).toContain('/tmp/a b.mov');
  });
  it('decodes copied normalized samples with exact startSample',async()=>{
