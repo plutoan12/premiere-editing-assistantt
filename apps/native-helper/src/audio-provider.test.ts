@@ -12,12 +12,12 @@ describe('FFmpeg audio provider',()=>{
   const pcm=Buffer.alloc(4*3);[.1,-.2,.3].forEach((v,i)=>pcm.writeFloatLE(v,i*4));
   const runner=async(_e:string,_a:readonly string[],_o:RunOptions):Promise<ProcessResult>=>({code:0,stdout:pcm,stderr:Buffer.alloc(0)});
   const p=new FfmpegAudioSampleProvider({resolvePath:()=>'/tmp/x.mov',runner,ffmpegPath:'ffmpeg',sampleRate:8000});
-  const w=await p.read({clipId:'a'},{metadata:{startSample:'25',maxSamples:3} as any});
+  const w=await p.readWindow({clipId:'a'}, {startSample:25n,maxSamples:3});
   expect(w.startSample).toBe(25n);expect([...w.samples]).toHaveLength(3);expect(w.samples[0]).toBeCloseTo(.1);
  });
  it('rejects requests beyond the sync analysis bound before spawning',async()=>{
   let called=false;const runner=async()=>{called=true;throw new Error('should not spawn')};
   const p=new FfmpegAudioSampleProvider({resolvePath:()=>'/tmp/x.mov',runner:runner as any,ffmpegPath:'ffmpeg',sampleRate:8000});
-  await expect(p.read({clipId:'a'},{metadata:{maxSamples:262145} as any})).rejects.toThrow(/sample/i);expect(called).toBe(false);
+  await expect(p.readWindow({clipId:'a'}, {startSample:0n,maxSamples:262145})).rejects.toThrow(/sample/i);expect(called).toBe(false);
  });
 });
