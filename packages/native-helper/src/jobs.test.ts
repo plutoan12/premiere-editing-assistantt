@@ -1,0 +1,17 @@
+import { describe,it } from 'vitest';
+import assert from 'node:assert/strict';
+import * as api from './jobs.js';
+const tick=()=>new Promise<void>(r=>setTimeout(r,5));
+async function settle(q:any,id:string){for(let i=0;i<200;i++){const s=q.get(id);if(!['queued','running'].includes(s.status))return s;await tick();}throw new Error('job did not finish');}
+describe('bounded job queue',()=>{
+ it('runs queued work and preserves exact bigint results',async()=>{assert.equal(typeof api.JobQueue,'function');const q=new api.JobQueue();const j=q.submit(async(_s,p)=>{p(.5);return {ticks:100n};});assert.equal(j.status,'queued');const done=await settle(q,j.id);assert.equal(done.status,'completed');assert.equal(done.result.ticks,100n);assert.equal(done.progress,1);await q.close();});
+ it('sanitizes arbitrary worker failure',async()=>{const q=new api.JobQueue();const j=q.submit(async()=>{throw new Error('private /full/path token');});const r=await settle(q,j.id);assert.equal(r.status,'failed');assert.ok(!JSON.stringify(r).includes('/full/path'));await q.close();});
+ it('never runs a queued cancelled job',async()=>{const q=new api.JobQueue();let called=false;const j=q.submit(async()=>{called=true;return 1;});q.cancel(j.id);await tick();assert.equal(called,false);assert.equal(q.get(j.id).status,'cancelled');await q.close();});
+ it('does not promote a late result after cancellation',async()=>{const q=new api.JobQueue();let resolve!:(value:number)=>void;const j=q.submit(()=>new Promise(r=>{resolve=r;}));await tick();q.cancel(j.id);resolve(7);await tick();assert.equal(q.get(j.id).status,'cancelled');assert.equal(q.get(j.id).result,undefined);await q.close();});
+ it('runs one task at a time until the cancelled worker has stopped',async()=>{const q=new api.JobQueue();let release!:()=>void,second=false;const a=q.submit(()=>new Promise<void>(r=>{release=r;}));await tick();q.cancel(a.id);const b=q.submit(async()=>{second=true;});await tick();assert.equal(second,false);release();await settle(q,b.id);assert.equal(second,true);await q.close();});
+ it('caps retained jobs and evicts terminal results',async()=>{const q=new api.JobQueue({capacity:2});const a=q.submit(async()=>1),b=q.submit(async()=>2);assert.throws(()=>q.submit(async()=>3),{code:'QUEUE_FULL'});await settle(q,b.id);q.submit(async()=>3);assert.throws(()=>q.get(a.id),{code:'JOB_NOT_FOUND'});await q.close();});
+ it('protects stored snapshots from caller mutation',async()=>{const q=new api.JobQueue();const j=q.submit(async()=>({a:{value:1}}));const r=await settle(q,j.id);r.result.a.value=99;assert.equal((q.get(j.id).result as any).a.value,1);await q.close();});
+ it('does not delete active jobs or accept work after shutdown',async()=>{const q=new api.JobQueue();const j=q.submit(async()=>1);assert.throws(()=>q.remove(j.id),{code:'JOB_ACTIVE'});await q.close();assert.throws(()=>q.submit(async()=>1),{code:'SHUTTING_DOWN'});});
+ it('cancels active work on shutdown',async()=>{const q=new api.JobQueue();let cancelled=false;const j=q.submit(s=>new Promise<void>(r=>s.addEventListener('abort',()=>{cancelled=true;r();},{once:true})));await tick();await q.close();assert.equal(cancelled,true);assert.equal(q.get(j.id).status,'cancelled');});
+ it('cancels timed-out work and records a structured timeout',async()=>{const q=new api.JobQueue({timeoutMs:20});const j=q.submit(s=>new Promise<void>(r=>s.addEventListener('abort',()=>r(),{once:true})));const r=await settle(q,j.id);assert.equal(r.status,'failed');assert.equal(r.error.code,'JOB_TIMEOUT');await q.close();});
+});
