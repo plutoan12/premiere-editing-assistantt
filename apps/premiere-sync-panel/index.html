@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head>
+<body>
+  <h2>Sync Review</h2><p class="label">PREMIERE EDITING ASSISTANT · 개발용</p>
+  <section><h3>1. 로컬 Helper 연결</h3><button id="connect">세션 파일 선택</button><p id="status" role="status">연결되지 않음</p></section>
+  <section><h3>2. 원본 클립 선택</h3><p>프로젝트 패널에서 2~16개를 선택해. 타임라인 선택은 사용하지 않아.</p>
+    <button id="capture">현재 선택 가져오기</button><pre id="sources">선택한 클립 없음</pre>
+    <button id="reference" disabled>기준 클립 선택</button>
+    <p class="hint">기준 버튼을 누르면 다음 클립으로 바뀌어. 첫 오디오 스트림을 모노 8 kHz로 변환하고 원본 파일 시작부터 최대 20초를 비교해. In/Out, 서브클립 구간, 배속과 프록시 타이밍은 적용하지 않아.</p>
+  </section>
+  <section><h3>3. 분석 및 검토</h3><div class="actions"><button id="run" disabled>오디오 싱크 분석</button><button id="cancel" disabled>취소</button><button id="retry" disabled>기존 작업 상태 재조회</button></div>
+    <pre id="result">원본과 시퀀스는 변경하지 않아.</pre><button id="export" disabled>검토용 JSON 저장</button>
+    <p class="hint">유사도 점수는 정답 확률이 아니야. 결과는 기준 원본 파일 0초에 대한 시간 차이야. 시퀀스 반영 기능은 이 개발 버전에 포함되지 않아.</p>
+  </section>
+  <script src="main.js"></script>
+</body></html>
