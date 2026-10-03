@@ -59,3 +59,8 @@ pnpm typecheck
 The final review was an author self-review, not an independent reviewer. A reproduced hanging-provider cancellation regression was fixed test-first. Providers must still terminate their own underlying processes; rejecting the engine operation cannot kill an uncooperative decoder. FFT work is synchronous: run it in a worker for a responsive host UI.
 
 Before a usable Premiere release: implement and verify an FFmpeg/ffprobe provider and long-file window strategy; test permitted real footage including noise, room delay and recording drift; add adapter dry-run/application and panel installation. No production footage, API keys, paid AI calls or source-media mutation are introduced here.
+
+
+## Consolidated API note
+
+PR #2 is the canonical contract baseline. The consolidated API keeps Core-native signed reference-relative `MediaTime`, `Provenance`, and `SequencePlan` integration while adding the safety regressions documented in `docs/superpowers/reports/2026-10-03-sync-consolidation-matrix.md`. Use `syncPlaybackBatch` when each playback take must retain an independent success/review result. Provider-owned PCM is snapshotted before caching. Validation and FFT helpers are intentionally not root exports.
