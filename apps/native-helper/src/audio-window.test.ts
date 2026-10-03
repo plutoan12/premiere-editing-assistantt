@@ -22,6 +22,6 @@ describe("bounded pcm extraction",()=>{
   const ff=await exe("ffmpeg",'const fs=require("node:fs");const p=process.argv.at(-1);fs.writeFileSync(p,"partial");process.exit(3)');
   const cache=await mkdtemp(join(tmpdir(),"pea cache "));dirs.push(cache);
   await expect(decodeAudioWindow("/tmp/camera.mov",{ffmpegPath:ff,ffprobePath:await probe(),cacheDir:cache,startSeconds:0,durationSeconds:.01,sampleRate:8000,maxSamples:1000})).rejects.toMatchObject({code:"PROCESS_FAILED"});
-  expect((await import("node:fs/promises")).readdir(cache)).resolves.toEqual([]);
+  await expect((await import("node:fs/promises")).readdir(cache)).resolves.toEqual([]);
  });
 });
