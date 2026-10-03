@@ -3,7 +3,8 @@ import {access,mkdtemp,rm} from 'node:fs/promises';import {tmpdir} from 'node:os
 import {runProcess} from './process-runner.js';import {probeMedia} from './ffmpeg.js';import {FfmpegAudioSampleProvider} from './audio-provider.js';
 async function available(name:string){try{await runProcess(name,['-version'],{timeoutMs:3000,maxStdoutBytes:65536});return true}catch{return false}}
 describe('system FFmpeg integration',()=>{
- it.skipIf(!(await available('ffmpeg'))||!(await available('ffprobe')))('generates probes and decodes tiny real container media',async()=>{
+ it('generates probes and decodes tiny real container media',async(ctx)=>{
+  if(!(await available('ffmpeg'))||!(await available('ffprobe'))){ctx.skip();return}
   const dir=await mkdtemp(join(tmpdir(),'pea-ffmpeg-'));const file=join(dir,'tone.wav');
   try{
    const gen=await runProcess('ffmpeg',['-v','error','-f','lavfi','-i','sine=frequency=440:sample_rate=8000:duration=0.2','-y',file],{timeoutMs:10000,maxStdoutBytes:1024});
