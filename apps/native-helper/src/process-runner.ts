@@ -4,7 +4,7 @@ export type ProcessErrorCode="FFMPEG_NOT_FOUND"|"TIMEOUT"|"CANCELLED"|"PROCESS_F
 export class ProcessRunError extends Error {
   constructor(public readonly code:ProcessErrorCode,message:string,public readonly stderr=""){super(message);this.name="ProcessRunError";}
 }
-export interface RunProcessOptions {timeoutMs:number;signal?:AbortSignal;maxOutputBytes?:number}
+export interface RunProcessOptions {timeoutMs:number;signal?:AbortSignal;maxOutputBytes?:number;env?:NodeJS.ProcessEnv}
 export interface ProcessResult {stdout:string;stderr:string;exitCode:number}
 
 export function runProcess(executable:string,args:readonly string[],options:RunProcessOptions):Promise<ProcessResult>{
@@ -13,7 +13,7 @@ export function runProcess(executable:string,args:readonly string[],options:RunP
   if(!Number.isSafeInteger(max)||max<1) throw new Error("maxOutputBytes must be positive");
   if(options.signal?.aborted) return Promise.reject(new ProcessRunError("CANCELLED","process cancelled"));
   return new Promise((resolve,reject)=>{
-    const child=spawn(executable,[...args],{shell:false,stdio:["ignore","pipe","pipe"]});
+    const child=spawn(executable,[...args],{shell:false,stdio:["ignore","pipe","pipe"],env:options.env});
     let stdout:Buffer<ArrayBufferLike>=Buffer.alloc(0),stderr:Buffer<ArrayBufferLike>=Buffer.alloc(0),forced:ProcessRunError|undefined,settled=false;
     const append=(current:Buffer<ArrayBufferLike>,chunk:Buffer<ArrayBufferLike>):Buffer<ArrayBufferLike>=>current.length>=max?current:Buffer.concat([current,chunk.subarray(0,Math.max(0,max-current.length))]);
     child.stdout.on("data",(v:Buffer)=>{stdout=append(stdout,v);});

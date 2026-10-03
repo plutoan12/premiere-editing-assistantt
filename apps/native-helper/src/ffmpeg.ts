@@ -1,7 +1,7 @@
 import {resolve} from "node:path";
 import {runProcess,ProcessRunError,type ProcessErrorCode} from "./process-runner.js";
 
-export type HelperErrorCode=ProcessErrorCode|"NO_AUDIO"|"CORRUPT_MEDIA";
+export type HelperErrorCode=ProcessErrorCode|"NO_AUDIO"|"CORRUPT_MEDIA"|"WINDOW_TOO_LARGE"|"INVALID_WINDOW";
 export class HelperError extends Error {constructor(public readonly code:HelperErrorCode,message:string){super(message);this.name="HelperError";}}
 export interface ProbeOptions {ffprobePath?:string;timeoutMs?:number;signal?:AbortSignal}
 export interface MediaProbe {durationSeconds:number;audio:{streamIndex:number;codec:string;sampleRate:number;channels:number}}
