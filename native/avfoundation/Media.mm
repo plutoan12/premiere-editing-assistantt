@@ -56,7 +56,19 @@ Source source(NSString* path){
 }
 long long videoFrames(Source&s,std::atomic_bool&cancel,Clock::time_point deadline){
  NSError*e=nil;AVAssetReader*r=[[AVAssetReader alloc]initWithAsset:s.asset error:&e];require(r!=nil,"video reader unavailable");AVAssetReaderTrackOutput*out=[AVAssetReaderTrackOutput assetReaderTrackOutputWithTrack:s.video outputSettings:nil];require([r canAddOutput:out],"video reader output unavailable");[r addOutput:out];require([r startReading],"video reader failed");CancelReader watch(r,cancel,deadline);std::vector<CMTime>times;
- while(true){check(cancel,deadline);CMSampleBufferRef b=[out copyNextSampleBuffer];if(!b)break;CMTime t=CMSampleBufferGetPresentationTimeStamp(b);auto count=CMSampleBufferGetNumSamples(b);CFRelease(b);require(count==1&&CMTIME_IS_NUMERIC(t),"unsupported video timing packet");times.push_back(t);require(times.size()<=14401,"video frame limit");}
+ while(true){
+  check(cancel,deadline);CMSampleBufferRef b=[out copyNextSampleBuffer];if(!b)break;
+  const auto count=CMSampleBufferGetNumSamples(b);
+  if(count<1||count>14401||(size_t)count+times.size()>14401){CFRelease(b);throw std::runtime_error("invalid video sample count: "+std::to_string(count));}
+  // Stored-format readers may group many video frames in one buffer.
+  // This API expands shared timing entries into each sample's exact timestamps.
+  for(CMItemIndex i=0;i<count;i++){
+   CMSampleTimingInfo timing{};const auto code=CMSampleBufferGetSampleTimingInfo(b,i,&timing);
+   if(code!=noErr||!CMTIME_IS_NUMERIC(timing.presentationTimeStamp)){CFRelease(b);throw std::runtime_error("video sample timing unavailable");}
+   times.push_back(timing.presentationTimeStamp);
+  }
+  CFRelease(b);
+ }
  require(r.status==AVAssetReaderStatusCompleted&&!times.empty(),"video read incomplete");std::sort(times.begin(),times.end(),[](CMTime a,CMTime b){return CMTimeCompare(a,b)<0;});
  for(size_t i=0;i<times.size();i++){double expected=(double)i*s.den/s.num,actual=CMTimeGetSeconds(times[i]);require(std::abs(actual-expected)<=1.01/times[i].timescale,"variable frame rate or video timing discontinuity");if(i)require(CMTimeCompare(times[i],times[i-1])>0,"duplicate video timestamp");}
  double end=(double)times.size()*s.den/s.num;require(std::abs(CMTimeGetSeconds(s.video.timeRange.duration)-end)<=.001,"video duration/frame mismatch");return (long long)times.size();
