@@ -25,3 +25,8 @@ export function validateAudioWindow(window: AudioSampleWindow): void {
     if(!Number.isFinite(sample) || Math.abs(sample)>1) throw new SyncValidationError('finite normalized samples in [-1,1] required');
   }
 }
+
+export function snapshotAudioWindow(window: AudioSampleWindow): AudioSampleWindow {
+  validateAudioWindow(window);
+  return { samples: new Float32Array(window.samples), sampleRate: window.sampleRate, startSample: window.startSample };
+}
