@@ -20,7 +20,7 @@ describe('consolidated workflow regressions',()=>{
  });
  it('keeps successful playback takes when one provider read fails',async()=>{
    let seed=7; const source=Float32Array.from({length:256},()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return (seed/4294967296-.5)*1.6;});
-   const provider:AudioSampleProvider={id:'test',version:'1',async read(clip){
+   const calls:string[]=[]; const provider:AudioSampleProvider={id:'test',version:'1',async read(clip){ calls.push(clip.clipId);
      if(clip.clipId==='bad') throw new Error('decode failed');
      const offset=clip.clipId==='good'?20:0;
      return {samples:source.slice(offset,offset+180),sampleRate:8000,startSample:0n};
@@ -31,6 +31,7 @@ describe('consolidated workflow regressions',()=>{
    expect(r).toHaveLength(2);
    expect(r.find(x=>x.takeId==='bad')!.group.status).toBe('review');
    expect(r.find(x=>x.takeId==='good')!.group.status).toBe('matched');
+   expect(calls.filter(x=>x==='master')).toHaveLength(1);
  });
  it('treats a full source occurrence plus a partial duplicate as conflict',()=>{
    const artifacts=[{id:'caption',clipId:'a',sourceRange:range(10n,10n)}];
