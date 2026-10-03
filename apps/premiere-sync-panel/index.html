@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>PEA Sync Import</title>
+<style>body{padding:16px;font-size:13px;}h2{font-size:18px;margin-bottom:12px;}p{margin:10px 0;}button{margin:8px 0;padding:8px;}#status{white-space:pre-wrap;}</style></head>
+<body><h2>PEA Sync Import</h2><p>싱크 CLI에서 만든 XML을 새 시퀀스로 가져와. 기존 시퀀스를 수정하거나 프로젝트를 자동 저장하지 않아.</p>
+<button id="select">싱크 XML 선택</button><p id="preview">선택된 파일 없음</p>
+<label><input id="approve" type="checkbox">현재 프로젝트에 새 시퀀스를 가져오는 데 동의</label>
+<button id="apply" disabled>승인하고 가져오기</button><p id="status" role="status">가져온 뒤 시작·중간·끝 싱크와 오디오 채널을 확인해.</p>
+<script src="index.js"></script></body></html>

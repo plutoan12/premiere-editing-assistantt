@@ -2,6 +2,8 @@ name: CI
 on:
   push:
   pull_request:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -13,6 +15,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - run: sudo apt-get update -qq && sudo apt-get install -y ffmpeg
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm test
       - run: pnpm typecheck
+      - run: pnpm sync:demo /tmp/pea-sync-ci-demo
+      - run: pnpm sync:files /tmp/pea-sync-ci-demo/job.json /tmp/pea-sync-ci-demo/output
+      - run: python3 scripts/validate-sync-xml.py /tmp/pea-sync-ci-demo/output/sync.xml --demo

@@ -1,1 +1,15 @@
-{"name":"premiere-editing-assistantt","private":true,"packageManager":"pnpm@10.17.1","scripts":{"test":"pnpm -r test","typecheck":"pnpm -r typecheck"},"devDependencies":{"typescript":"^5.9.2","vitest":"^3.2.4"}}
+{
+  "name": "premiere-editing-assistantt",
+  "private": true,
+  "packageManager": "pnpm@10.17.1",
+  "scripts": {
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "sync:files": "pnpm --filter @pea/sync-cli start",
+    "sync:demo": "node scripts/create-sync-fixtures.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}
