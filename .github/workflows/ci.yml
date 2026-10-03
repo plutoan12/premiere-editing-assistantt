@@ -13,8 +13,19 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
-      - run: ffmpeg -version | head -1
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm test
       - run: pnpm typecheck
+  ffmpeg-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - run: pnpm install --no-frozen-lockfile
+      - run: PEA_FFMPEG_INTEGRATION=1 pnpm --filter @pea/sync-helper-client test -- real-media.integration.test.ts

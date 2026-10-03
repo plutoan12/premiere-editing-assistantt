@@ -1,9 +1,9 @@
 import {afterAll,describe,expect,it} from "vitest";
 import {mkdtemp,rm} from "node:fs/promises";import {tmpdir} from "node:os";import {join} from "node:path";import {spawnSync} from "node:child_process";
 import {createHelperServer} from "@pea/native-helper/server";import {syncClips} from "@pea/sync";import {createHelperAudioProvider} from "./index.js";
-describe("generated real-container sync",()=>{
+const integrationIt=process.env.PEA_FFMPEG_INTEGRATION==="1"?it:it.skip;\ndescribe("generated real-container sync",()=>{
  let dir="";afterAll(async()=>{if(dir)await rm(dir,{recursive:true,force:true});});
- it("recovers a 250ms delayed take through ffmpeg -> HTTP -> sync engine",async()=>{
+ integrationIt("recovers a 250ms delayed take through ffmpeg -> HTTP -> sync engine",async()=>{
   dir=await mkdtemp(join(tmpdir(),"pea-real-media-"));const ref=join(dir,"ref.wav"),take=join(dir,"take.wav"),cache=join(dir,"cache");
   const a=spawnSync("ffmpeg",["-hide_banner","-loglevel","error","-f","lavfi","-i","anoisesrc=color=white:seed=123:d=4:r=8000","-c:a","pcm_f32le","-y",ref]);
   const b=spawnSync("ffmpeg",["-hide_banner","-loglevel","error","-f","lavfi","-i","anoisesrc=color=white:seed=123:d=3.5:r=8000","-af","adelay=250:all=1","-c:a","pcm_f32le","-y",take]);
