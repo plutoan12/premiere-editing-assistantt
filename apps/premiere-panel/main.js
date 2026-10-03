@@ -3,6 +3,7 @@ const fs = storage.localFileSystem;
 
 let session = null;
 let currentJob = null;
+let listenersInstalled = false;
 
 function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value; }
 function setDisabled(id, value) { const el = document.getElementById(id); if (el) el.disabled = value; }
@@ -76,6 +77,8 @@ entrypoints.setup({
   panels: {
     "pea-main": {
       show() {
+        if (listenersInstalled) return;
+        listenersInstalled = true;
         document.getElementById("connect")?.addEventListener("click", guard(connect));
         document.getElementById("transcribe")?.addEventListener("click", guard(transcribe));
         document.getElementById("cancel")?.addEventListener("click", guard(cancel));
