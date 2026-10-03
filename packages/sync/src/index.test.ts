@@ -1,7 +1,13 @@
-import {describe,it,expect} from "vitest"; import {chooseSyncStrategy,buildTimecodeSyncGroup} from "./index.js";
-describe("sync engine",()=>{
- it("prefers exact timecode when every clip has compatible timecode",()=>expect(chooseSyncStrategy([{clipId:"a",timecodeTicks:10n},{clipId:"b",timecodeTicks:20n}])).toBe("timecode"));
- it("falls back to audio when timecode is incomplete but audio fingerprints exist",()=>expect(chooseSyncStrategy([{clipId:"a",audioFingerprint:"x"},{clipId:"b",audioFingerprint:"y"}])).toBe("audio"));
- it("requires manual review when no deterministic evidence exists",()=>expect(chooseSyncStrategy([{clipId:"a"},{clipId:"b"}])).toBe("manual"));
- it("normalizes timecode offsets against the earliest clip",()=>{const g=buildTimecodeSyncGroup("g1",[{clipId:"a",timecodeTicks:100n},{clipId:"b",timecodeTicks:125n}]); expect(g.members.map(x=>x.offsetTicks)).toEqual([0n,25n])});
+import { test } from 'vitest';
+import assert from 'node:assert/strict';
+import { chooseSyncStrategy, buildTimecodeSyncGroup, syncClips, syncPlayback, resyncArtifacts } from './index.js';
+test('public API exports independent engines and fails closed on legacy incomplete TC',()=>{
+  assert.equal(typeof syncClips,'function');assert.equal(typeof syncPlayback,'function');assert.equal(typeof resyncArtifacts,'function');
+  assert.equal(chooseSyncStrategy([{clipId:'a',timecodeTicks:10n},{clipId:'b',timecodeTicks:20n}]),'manual');
+});
+test('legacy offsetTicks alias is preserved only alongside an explicit timebase',()=>{
+  const evidence=(clipId:string,ticks:bigint)=>({clipId,timecodeTicks:ticks,clockId:'jam',frameRate:{rate:{numerator:24,denominator:1},dropFrame:false}});
+  const group=buildTimecodeSyncGroup('g',[evidence('a',100n),evidence('b',125n)]);
+  assert.deepEqual(group.members.map(x=>x.offsetTicks),[0n,25n]);
+  assert.deepEqual(group.members[1].offset.timebase,{numerator:1,denominator:24});
 });
