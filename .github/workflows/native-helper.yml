@@ -1,0 +1,43 @@
+name: Native Helper
+on:
+  push:
+    paths: ['packages/native-helper/**', 'packages/sync/**', 'packages/core/**', '.github/workflows/native-helper.yml']
+  pull_request:
+    paths: ['packages/native-helper/**', 'packages/sync/**', 'packages/core/**', '.github/workflows/native-helper.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install FFmpeg (Linux)
+        if: runner.os == 'Linux'
+        run: command -v ffmpeg && command -v ffprobe || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+      - name: Install FFmpeg (macOS)
+        if: runner.os == 'macOS'
+        run: command -v ffmpeg && command -v ffprobe || brew install ffmpeg
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm --filter @pea/native-helper test:integration
+      - run: pnpm --filter @pea/native-helper build
+      - run: pnpm --filter @pea/native-helper smoke
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-helper-${{ matrix.os }}
+          path: packages/native-helper/dist/*.mjs
+          retention-days: 14
