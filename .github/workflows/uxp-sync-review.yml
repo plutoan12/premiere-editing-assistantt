@@ -1,0 +1,50 @@
+name: UXP Sync Review
+on:
+  pull_request:
+    paths:
+      - 'apps/premiere-sync-panel/**'
+      - 'apps/native-helper/**'
+      - '.github/workflows/uxp-sync-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install test tools on Linux
+        if: runner.os == 'Linux'
+        run: |
+          command -v ffmpeg && command -v ffprobe || (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends ffmpeg)
+          openssl version
+      - name: Install test tools on macOS
+        if: runner.os == 'macOS'
+        run: |
+          command -v ffmpeg && command -v ffprobe || brew install ffmpeg
+          brew list openssl@3 >/dev/null 2>&1 || brew install openssl@3
+          echo "$(brew --prefix openssl@3)/bin" >> "$GITHUB_PATH"
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm test
+      - run: pnpm typecheck
+      - run: pnpm --filter @pea/premiere-sync-panel check:syntax
+      - run: pnpm --filter @pea/premiere-sync-panel build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: premiere-sync-review-development-${{ matrix.os }}
+          path: apps/premiere-sync-panel/dist/
+          if-no-files-found: error
+          retention-days: 14
