@@ -15,7 +15,7 @@ describe("native helper boundary",()=>{
     const base=`http://127.0.0.1:${s.port}`;
     expect((await fetch(base+"/health")).status).toBe(200);
     expect((await fetch(base+"/v1/media/probe",{method:"POST",headers:{"content-type":"application/json"},body:"{}"})).status).toBe(401);
-    expect((await fetch(base+"/v1/media/probe",{method:"POST",headers:{authorization:`Bearer ${s.token}`,"content-type":"application/json"},body:"{}"})).status).toBe(501);
+    expect((await fetch(base+"/v1/media/probe",{method:"POST",headers:{authorization:`Bearer ${s.token}`,"content-type":"application/json"},body:"{}"})).status).toBe(400);
   });
   it("rejects oversized request bodies before JSON parsing",async()=>{
     const s=await createHelperServer({maxBodyBytes:32}); opened.push(s);

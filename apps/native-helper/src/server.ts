@@ -1,5 +1,5 @@
 import {createServer,type IncomingMessage,type ServerResponse} from "node:http";
-import {randomBytes,timingSafeEqual} from "node:crypto";
+import {randomBytes,timingSafeEqual} from "node:crypto";\nimport {probeMedia,HelperError} from "./ffmpeg.js";
 
 export interface HelperServerOptions { maxBodyBytes?: number }
 export interface HelperServer { host:"127.0.0.1"; port:number; token:string; close():Promise<void> }
@@ -37,7 +37,7 @@ export async function createHelperServer(options:HelperServerOptions={}):Promise
       if(!authorized(req,token)){send(res,401,{error:"UNAUTHORIZED"});return;}
       const payload=await readBody(req,maxBodyBytes);
       if(payload.tooLarge){send(res,413,{error:"BODY_TOO_LARGE"});return;}
-      send(res,501,{error:"NOT_IMPLEMENTED"});
+      if(req.method==="POST"&&url.pathname==="/v1/media/probe"){\n        let input:any;try{input=JSON.parse(payload.body||"{}");}catch{send(res,400,{error:"INVALID_JSON"});return;}\n        if(typeof input.path!=="string"||!input.path){send(res,400,{error:"PATH_REQUIRED"});return;}\n        try{send(res,200,{probe:await probeMedia(input.path,{ffprobePath:process.env.PEA_FFPROBE_PATH})});}catch(error){if(error instanceof HelperError){send(res,422,{error:error.code,message:error.message});return;}throw error;}\n        return;\n      }\n      send(res,501,{error:"NOT_IMPLEMENTED"});
     } catch(error) {
       send(res,500,{error:"INTERNAL_ERROR",message:error instanceof Error?error.message:"unknown error"});
     }
