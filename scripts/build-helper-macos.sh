@@ -10,7 +10,7 @@ if [ "$NODE_MAJOR" -lt 25 ]; then
   echo "Node 25.5+ is required for built-in --build-sea packaging."
   exit 1
 fi
-pnpm exec esbuild "$ROOT/apps/native-helper/src/cli.ts" --bundle --platform=node --format=esm --outfile="$OUT/pea-helper.mjs"
+pnpm --filter @pea/native-helper exec esbuild "$ROOT/apps/native-helper/src/cli.ts" --bundle --platform=node --format=esm --outfile="$OUT/pea-helper.mjs"
 cat > "$OUT/sea-config.json" <<JSON
 {
   "main": "$OUT/pea-helper.mjs",
