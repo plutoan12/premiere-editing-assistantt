@@ -47,8 +47,8 @@ export function correlateAudio(reference:AudioSampleWindow,target:AudioSampleWin
   if(!Number.isSafeInteger(maxLag)||maxLag<0) throw new SyncValidationError('max lag must be a non-negative integer');
   if(!Number.isSafeInteger(minOverlap)||minOverlap<16) throw new SyncValidationError('minimum overlap must be at least 16 samples');
   if(!Number.isFinite(minScore)||minScore<=0||minScore>1) throw new SyncValidationError('score threshold must be in (0,1]');
-  if(!Number.isFinite(minMargin)||minMargin<=0||minMargin>1) throw new SyncValidationError('margin threshold must be in (0,1]');
-  if(!Number.isSafeInteger(exclusion)||exclusion<0||exclusion>=minOverlap/2) throw new SyncValidationError('invalid peak exclusion radius');
+  if(!Number.isFinite(minMargin)||minMargin<0||minMargin>1) throw new SyncValidationError('margin threshold must be in [0,1]');
+  if(!Number.isSafeInteger(exclusion)||exclusion<0||exclusion>=minOverlap/2||exclusion>=maxLag && maxLag>0) throw new SyncValidationError('invalid peak exclusion radius');
   const empty=(reason:SyncReason):AudioCorrelationResult=>({status:'review',offsetSamples:null,score:0,
     secondBestScore:0,margin:0,overlapSamples:0,polarity:null,reason,method:'fft-ncc-v1'});
   if(reference.sampleRate!==target.sampleRate) return empty('SAMPLE_RATE_MISMATCH');
@@ -78,7 +78,8 @@ export function correlateAudio(reference:AudioSampleWindow,target:AudioSampleWin
   best.signed=Math.max(-1,Math.min(1,exact));best.score=Math.abs(best.signed);
   const second=peaks.find(x=>Math.abs(x.lag-best.lag)>exclusion)?.score??0;
   const margin=Math.max(0,best.score-second);
-  const reason:SyncReason=best.score<minScore?'LOW_CORRELATION':margin<minMargin?'AMBIGUOUS_PEAK':'AUDIO_MATCH';
+  const artificialBoundary=Math.abs(best.lag)===maxLag && maxLag < Math.max(a.length,b.length)-minOverlap;
+  const reason:SyncReason=best.score<minScore?'LOW_CORRELATION':margin<=Math.max(Number.EPSILON,minMargin)?'AMBIGUOUS_PEAK':artificialBoundary?'SEARCH_BOUNDARY':'AUDIO_MATCH';
   const accepted=reason==='AUDIO_MATCH';
   return {status:accepted?'matched':'review',offsetSamples:accepted?best.lag:null,
     score:best.score,secondBestScore:second,margin,overlapSamples:best.n,
