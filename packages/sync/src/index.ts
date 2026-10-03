@@ -1,14 +1,15 @@
-export type SyncStrategy="timecode"|"audio"|"manual";
-export interface SyncEvidence{clipId:string;timecodeTicks?:bigint;audioFingerprint?:string}
-export interface SyncMember{clipId:string;offsetTicks:bigint}
-export interface SyncGroup{id:string;strategy:SyncStrategy;confidence:number;members:SyncMember[]}
-export function chooseSyncStrategy(items:SyncEvidence[]):SyncStrategy{
- if(items.length>1&&items.every(x=>x.timecodeTicks!==undefined)) return "timecode";
- if(items.length>1&&items.every(x=>Boolean(x.audioFingerprint))) return "audio";
- return "manual";
-}
-export function buildTimecodeSyncGroup(id:string,items:SyncEvidence[]):SyncGroup{
- if(items.length<2||!items.every(x=>x.timecodeTicks!==undefined)) throw new Error("complete timecode evidence required");
- const earliest=items.reduce((m,x)=>x.timecodeTicks!<m?x.timecodeTicks!:m,items[0].timecodeTicks!);
- return {id,strategy:"timecode",confidence:1,members:items.map(x=>({clipId:x.clipId,offsetTicks:x.timecodeTicks!-earliest}))};
-}
+export type * from "./types.js";
+export { chooseSyncStrategy } from "./strategy.js";
+export { buildTimecodeSyncGroup, compatibleTimecodes } from "./timecode.js";
+export { MAX_AUDIO_WINDOW_SAMPLES } from "./audio-provider.js";
+export type { AudioSamples, AudioSampleRequest, AudioSampleProvider } from "./audio-provider.js";
+export { correlateAudio } from "./audio-correlation.js";
+export type { CorrelationOptions, CorrelationResult } from "./audio-correlation.js";
+export { synchronize } from "./sync.js";
+export type { SyncRequest } from "./sync.js";
+export { buildMulticamGroups } from "./multicam.js";
+export type { MulticamResult } from "./multicam.js";
+export { syncPlayback } from "./playback.js";
+export type { PlaybackRequest, PlaybackResult } from "./playback.js";
+export { resyncArtifacts } from "./resync.js";
+export type { SourceAnchoredArtifact, ResyncSegment, MappedArtifact, ResyncResult } from "./resync.js";
