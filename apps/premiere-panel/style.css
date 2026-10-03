@@ -1,0 +1,5 @@
+body { padding: 14px; font-family: system-ui, sans-serif; }
+main { display: flex; flex-direction: column; gap: 10px; }
+button { min-height: 32px; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
+hr { width: 100%; opacity: .25; }
