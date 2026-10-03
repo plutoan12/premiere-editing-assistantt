@@ -79,7 +79,7 @@ export function correlateAudio(reference:AudioSampleWindow,target:AudioSampleWin
   const second=peaks.find(x=>Math.abs(x.lag-best.lag)>exclusion)?.score??0;
   const margin=Math.max(0,best.score-second);
   const artificialBoundary=Math.abs(best.lag)===maxLag && maxLag < Math.max(a.length,b.length)-minOverlap;
-  const reason:SyncReason=best.score<minScore?'LOW_CORRELATION':margin<=Math.max(Number.EPSILON,minMargin)?'AMBIGUOUS_PEAK':artificialBoundary?'SEARCH_BOUNDARY':'AUDIO_MATCH';
+  const reason:SyncReason=best.score<minScore?'LOW_CORRELATION':margin<=Math.max(1e-9,minMargin)?'AMBIGUOUS_PEAK':artificialBoundary?'SEARCH_BOUNDARY':'AUDIO_MATCH';
   const accepted=reason==='AUDIO_MATCH';
   return {status:accepted?'matched':'review',offsetSamples:accepted?best.lag:null,
     score:best.score,secondBestScore:second,margin,overlapSamples:best.n,
