@@ -70,6 +70,8 @@ the deliverable. No install script approval was granted. Direct installed runner
   JSON reader caps them at 100; such extreme values may serialize but cannot round-trip.
   Ordinary production time values are far below this bound; align these limits in a
   subsequent Core/serialization contract review.
+  Resolved in the 2026-10-07 follow-up: remove the decoder-only digit cap and verify
+  exact start/duration round-trips above 100 digits, plus malformed-string rejection.
 - Final: Ruling: reviewer deferred actual Premiere SDK behavior, render fidelity, font
   metrics, resource inventories and live sequence checks — these require the future
   host bridge and an actual Premiere test project. Cost: no real-host application claim
@@ -79,3 +81,6 @@ the deliverable. No install script approval was granted. Direct installed runner
   Full suite passes 112/112; Core/Graphics/adapter typechecks pass. Sync typecheck fails
   because local Node type declarations are missing (TS2307); no package was installed.
   Commit/push/PR publication is authorized by this later instruction; main merge is not.
+- Follow-up: PR #15's original GitHub CI passed both pnpm test and pnpm typecheck.
+  The bigint correction passes 120/120 local tests and Graphics/adapter typechecks.
+  The reviewer's previously deferred serialization issue is now fixed.

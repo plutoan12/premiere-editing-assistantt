@@ -43,8 +43,8 @@ and host measurement exceptions aborting unrelated requests. Hard-break and grap
 boundaries are now checked when importing plans. No re-review was claimed; fixes were
 verified by the full suite and typechecks.
 
-Minor deferred issue: runtime time values can exceed the wire reader's 100-decimal-digit
-tick limit. Such extreme values do not round-trip even though they can serialize.
+The original review deferred a mismatch between runtime bigint ticks and the wire
+reader's 100-digit limit. This is resolved by the follow-up below.
 
 Real Premiere tests were not run: this base has no implemented host bridge or actual
 test project. SDK behavior, template/font inventories, real-font measurements, sequence
@@ -83,5 +83,22 @@ focused on Graphics. Core PR #1 remains unmerged into main.
   dependency installation was performed. Sync source/configuration matches the updated
   Core branch exactly. This is a failed check, not a passing check.
 - `git diff --check`: exit 0.
-- Real Premiere host checks remain unrun. The limitations and deferred 100-digit wire
-  tick issue above are unchanged.
+- Real Premiere host checks remain unrun. At publication the 100-digit wire tick issue
+  was still deferred; it is resolved by the follow-up below.
+
+## Follow-up — exact bigint round-trip
+
+- Reproduced the reader/writer mismatch separately for start and duration ticks using
+  `10n ** 100n + 123456789n`; both tests failed at the decoder's 100-character cap.
+- Removed that decoder-only limit, preserving canonical unsigned decimal validation and
+  the Core time validators. No format/schema version change is required.
+- Added rejection cases for exponent notation, leading zeroes, signs, decimal points,
+  empty strings and whitespace.
+- Full direct Vitest run: exit 0, 19 files and **120 tests passed**.
+- Graphics and Premiere adapter direct TypeScript checks and diff whitespace check: exit 0.
+- GitHub CI on the original published commit `ebf140a` completed `pnpm test` and
+  `pnpm typecheck` successfully: https://github.com/plutoan12/premiere-editing-assistantt/actions/runs/37626786033.
+  This confirms the previously reported Sync type failure is specific to the stale local
+  dependency setup. The follow-up commit's CI result is reported on PR #15.
+- Real Premiere rendering/host integration remains the only unrun integration layer;
+  no host API call or project write was added by this correction.

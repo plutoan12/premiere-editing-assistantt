@@ -89,8 +89,10 @@ never mutates input, source media, project state or artifacts. The orchestrator 
 the previous valid artifact until it accepts and validates a candidate. Partial plans
 must not replace a complete artifact without an explicit acceptance policy.
 
-Serialized ticks are decimal strings; numeric ticks, future schema versions and invalid
-layouts are rejected. JSON does not prove a font/template exists on a host: inventories
+Serialized ticks are canonical decimal strings with the same bigint range as runtime
+time values; decoding adds no separate digit-count limit. Numeric ticks, signed or
+exponential strings, future schema versions and invalid layouts are rejected.
+JSON does not prove a font/template exists on a host: inventories
 and actual rendering must be checked again when the host consumes the plan.
 
 ## Premiere handoff

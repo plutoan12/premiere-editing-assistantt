@@ -75,7 +75,7 @@ export function validateGraphicsPlan(input: unknown): GraphicsPlan {
 
 /** JSON wire time uses canonical decimal strings, never lossy JSON numbers. */
 const WireTimeSchema = z.object({
-  ticks: z.string().max(100).regex(/^(0|[1-9][0-9]*)$/).transform(value => BigInt(value)),
+  ticks: z.string().regex(/^(0|[1-9][0-9]*)$/).transform(value => BigInt(value)),
   timebase: z.object({ numerator: z.number(), denominator: z.number() }).strict(),
 }).strict().pipe(GraphicsTimeSchema);
 const WireRangeSchema = z.object({ start: WireTimeSchema, duration: WireTimeSchema }).strict().pipe(GraphicsRangeSchema);

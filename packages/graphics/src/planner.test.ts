@@ -86,6 +86,21 @@ describe("versioned GraphicsPlan serialization", () => {
     expect(JSON.parse(json).graphics[0].decision.range.start.ticks).toBe("24");
     expect(parseGraphicsPlan(json)).toEqual(plan);
   });
+  it.each(["start", "duration"] as const)("round-trips %s ticks beyond 100 decimal digits without rounding", field => {
+    const plan = planGraphics(input(), measure);
+    const ticks = 10n ** 100n + 123456789n;
+    plan.graphics[0].decision.range[field].ticks = ticks;
+    const json = serializeGraphicsPlan(plan);
+    expect(JSON.parse(json).graphics[0].decision.range[field].ticks).toBe(ticks.toString());
+    const restored = parseGraphicsPlan(json);
+    expect(restored.graphics[0].decision.range[field].ticks).toBe(ticks);
+    expect(restored).toEqual(plan);
+  });
+  it.each(["1e3", "01", "-1", "1.5", "", " 1"])("rejects noncanonical tick string %j", ticks => {
+    const plain = JSON.parse(serializeGraphicsPlan(planGraphics(input(), measure)));
+    plain.graphics[0].decision.range.start.ticks = ticks;
+    expect(() => parseGraphicsPlan(JSON.stringify(plain))).toThrow();
+  });
   it("rejects unsupported versions, invalid geometry and overlapping decisions", () => {
     const plain = JSON.parse(serializeGraphicsPlan(planGraphics(input(), measure)));
     expect(() => parseGraphicsPlan(JSON.stringify({ ...plain, schemaVersion: "2.0.0" }))).toThrow();
