@@ -30,8 +30,8 @@ An initial file-picker operation selected the dependency directory instead of on
 
 ## Pending actual caption acceptance
 
-The newly installed extension was not yet listed in Premiere's open session. A restart was attempted, but Premiere prompted to save another task's `RoughCut-Host-Validation-20261008.prproj`. The restart was canceled to preserve that task's unsaved state, and the user was asked how to handle the open test projects. No unsigned-extension setting was enabled.
+With the user's approval, all open test projects were saved, Premiere was quit and relaunched normally, and the dedicated Subtitle test project was reopened. **Window → Extensions** now lists **Subtitle · 캡션 적용**. The Mac then became locked, preventing further UI inspection; the user has been asked to unlock it. No unsigned-extension setting was enabled.
 
 Caption panel loading, the native `createCaptionTrack` call, visible cue text/times, playback, and persistence after reopening are **not yet verified**. The Subtitle UXP review panel's real host load also remains unverified. Installation and automated tests do not establish either result.
 
-After the restart is available, open **Window → Extensions → Subtitle · 캡션 적용**, choose the actual-model sequence JSON, verify the displayed test project and `ko-yuna-premiere` sequence, and apply once. Check the new caption track and both cue times, save and reopen the test project, and verify no duplicate track can be created by reopening the same document. Record the result here before calling the host acceptance complete.
+After the Mac is unlocked, open **Window → Extensions → Subtitle · 캡션 적용**, confirm the panel body loads, choose the actual-model sequence JSON, verify the displayed test project and `ko-yuna-premiere` sequence, and apply once. Check the new caption track and both cue times, save and reopen the test project, and verify no duplicate track can be created by reopening the same document. Record the result here before calling the host acceptance complete.
