@@ -3,7 +3,7 @@ import * as media from './index.js';
 import {id,assetRecord,clip,time} from './testing/fixtures.js';
 const target={kind:'asset' as const,id:id(1)};
 const candidate=(value:string)=>({field:'captureDate' as const,value,source:'probe' as const,provenance:{provider:'fixture'}});
-const fixture=()=>({...media.emptyCatalog(id(100)),assets:[assetRecord()],clips:[clip()]});
+const fixture=():media.CatalogState=>({...media.emptyCatalog(id(100)),assets:[assetRecord()],clips:[clip()]});
 it('reports conflicting automatic dates and retains their sources',()=>{
   const r=media.resolveMetadata({target,field:'captureDate',candidates:[candidate('2026-10-03'),candidate('2026-10-04')]});
   expect(r.status).toBe('conflict');expect(r.value).toBeUndefined();expect(r.reasons).toHaveLength(2);
