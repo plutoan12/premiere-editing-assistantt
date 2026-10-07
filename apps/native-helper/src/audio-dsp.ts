@@ -19,7 +19,7 @@ export interface AudioDspOptions {
   ffmpegPath?:string;ffprobePath?:string;outputRoot?:string;timeoutMs?:number;maxOutputBytes?:number;maxDurationSeconds?:number;
   runner?: typeof runProcess;
 }
-/** DSP only: no server, no source writes, no dependency on unavailable local @pea/audio contracts. */
+/** DSP only: no server or source writes. Audio Engine adaptation lives in audio-engine-provider.ts. */
 export class AudioDspService {
   private readonly options: AudioDspOptions;
   constructor(options:AudioDspOptions={}) {
@@ -52,7 +52,7 @@ export class AudioDspService {
     if(values.sampleCount/metadata.sampleRate>(this.options.maxDurationSeconds??7200))throw new HelperError('DURATION_LIMIT','Decoded audio duration limit exceeded',422);
     const after=await sourceFingerprint(input.path,signal);
     if(source.path!==after.path||source.sha256!==after.sha256)throw new HelperError('SOURCE_CHANGED','Source changed during measurement',409);
-    return {...metadata,...values,durationSeconds:values.sampleCount/metadata.sampleRate,schemaVersion:1,scope:'whole-selected-stream',streamIndex:input.streamIndex,monoPolicy:input.monoPolicy,sourceSha256:source.sha256,ffmpegVersion:version.stdout.toString('utf8').split('\n')[0],meter:'ffmpeg-ebur128-truepeak'};
+    return {...metadata,...values,durationSeconds:values.sampleCount/metadata.sampleRate,schemaVersion:1,scope:'whole-selected-stream',streamIndex:input.streamIndex,monoPolicy:input.monoPolicy,sourceSha256:source.sha256,ffmpegVersion:version.stdout.toString('utf8').split(/\r?\n/)[0],meter:'ffmpeg-ebur128-truepeak'};
   }
   async measure(value:unknown,signal?:AbortSignal):Promise<AudioMeasurement>{
     const input=validateMeasureInput(value);return this.bounded(signal,(s,r)=>this.measureInternal(input,s,r));

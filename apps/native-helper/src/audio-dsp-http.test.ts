@@ -15,10 +15,10 @@ test('authenticated HTTP jobs measure, render and retain validated artifacts',as
   const unauthorized=await fetch(server.address+'/v1/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'audio-measure',input})});assert.equal(unauthorized.status,401);
   for(const kind of ['audio-measure','audio-normalize']){
    const body={kind,input:kind==='audio-measure'?input:{...input,approved:true,allowDynamic:true,target:{integratedLufs:-23,truePeakDbtp:-2,loudnessRangeLu:11}}};
-   const submitted=await fetch(server.address+'/v1/jobs',{method:'POST',headers,body:JSON.stringify(body)});assert.equal(submitted.status,202);
+   const submitted:Response=await fetch(server.address+'/v1/jobs',{method:'POST',headers,body:JSON.stringify(body)});assert.equal(submitted.status,202);
    const {id}=await submitted.json() as {id:string};let done=false;
    for(let i=0;i<300;i++){
-    const response=await fetch(server.address+`/v1/jobs/${id}`,{headers});assert.equal(response.status,200);
+    const response:Response=await fetch(server.address+`/v1/jobs/${id}`,{headers});assert.equal(response.status,200);
     const job=await response.json() as {status:string;result?:{sampleCount?:number;normalizationMode?:string;humanReview?:string};error?:unknown};
     if(job.status==='failed')assert.fail(JSON.stringify(job.error));
     if(job.status==='completed'){
