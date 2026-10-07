@@ -34,6 +34,7 @@ export const AssetRecordSchema = z
     locations: z.array(z.string().min(1)).min(1),
     duration: MediaTimeSchema.optional(),
     availability: z.enum(["online", "offline", "unknown"]),
+    sourceState: z.enum(["verified", "unverified"]).optional(),
     probe: ProbeRecordSchema.optional(),
     analysis: z
       .object({

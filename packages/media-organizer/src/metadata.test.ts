@@ -32,6 +32,77 @@ it("keeps a date without timezone unchanged", () => {
     }).value,
   ).toBe("2026-10-03");
 });
+
+it.each(["probe", "host"] as const)(
+  "requires confirmation for timezone-less %s dates",
+  (source) => {
+    const s = fixture();
+    s.metadata = [
+      {
+        target,
+        field: "captureDate",
+        candidates: [
+          {
+            ...candidate("2026-10-03"),
+            source,
+            rawValue: "2026-10-03T23:30:00",
+          },
+        ],
+      },
+    ];
+    const rules = {
+      ...media.defaultRuleSet(id(50)),
+      orderedFields: ["captureDate" as const],
+    };
+    const resolved = media.effectiveMetadata(target, s, "captureDate");
+    expect(resolved.value).toBe("2026-10-03");
+    expect(media.classify(target, s, rules).requiresReview).toBe(true);
+    expect(
+      media.buildOrganizationPlan(s, [target], rules, [target], () => id(60))
+        .assignments,
+    ).toEqual([]);
+    const confirmed = media.setMetadataOverride(
+      s,
+      target,
+      "captureDate",
+      "2026-10-03",
+    );
+    expect(
+      media.buildOrganizationPlan(confirmed, [target], rules, [], () => id(60))
+        .assignments,
+    ).toHaveLength(1);
+    expect(confirmed.metadata[0].candidates[0].rawValue).toBe(
+      "2026-10-03T23:30:00",
+    );
+  },
+);
+
+it("accepts dated observations with explicit timezone and explicit filename date rules", () => {
+  expect(
+    media.resolveMetadata({
+      target,
+      field: "captureDate",
+      candidates: [
+        {
+          ...candidate("2026-10-03"),
+          timezone: "+09:00",
+        },
+      ],
+    }).status,
+  ).toBe("rule_match");
+  expect(
+    media.resolveMetadata({
+      target,
+      field: "captureDate",
+      candidates: [
+        {
+          ...candidate("2026-10-03"),
+          source: "filenameRule",
+        },
+      ],
+    }).status,
+  ).toBe("rule_match");
+});
 it("keeps locked override after new probe while preserving notes and tags", async () => {
   let s = media.setMetadataOverride(
     fixture(),

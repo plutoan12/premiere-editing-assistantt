@@ -199,16 +199,21 @@ export function classify(
   ];
   const status = values.some((x) => x.status === "conflict")
     ? "conflict"
-    : values.some((x) => x.status === "missing")
-      ? "missing"
-      : values.some((x) => x.status === "user_confirmed")
-        ? "user_confirmed"
-        : "rule_match";
+    : values.some((x) => x.status === "needs_review")
+      ? "needs_review"
+      : values.some((x) => x.status === "missing")
+        ? "missing"
+        : values.some((x) => x.status === "user_confirmed")
+          ? "user_confirmed"
+          : "rule_match";
   return {
     target,
     pathSegments,
     status,
     reasons: values.flatMap((x) => x.reasons),
-    requiresReview: status === "conflict" || status === "missing",
+    requiresReview:
+      status === "conflict" ||
+      status === "missing" ||
+      status === "needs_review",
   };
 }

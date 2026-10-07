@@ -14,9 +14,13 @@ It reuses `@pea/core` media/time/job contracts and MiniSearch 7.2.0.
 - Probe observations, explicit user overrides, notes, tags and favorites.
   Reanalysis preserves user values. Changed content marks previous clip ranges and
   ranged annotations for review; it does not rewrite them to fit new media.
+  Failed or unstable analysis retains the previous artifact but marks the source
+  unverified, blocking organization until a complete stable analysis succeeds.
 - Explainable date/device/media-kind classification and bounded filename patterns.
   Missing dates/devices and conflicting observations require review. Camera model
   names and file modification dates are not treated as device IDs or capture dates.
+  Probe/host dates without an explicit timezone retain their observed value with
+  `needs_review`; confirm them with a user override before applying a date rule.
 - Korean NFC/NFD normalization, filename/tag/note/metadata search, AND filters,
   saved queries and rebuildable indexes. This is lexical search, not semantic AI.
 - Reviewed organization plans, editor capability contracts, stale-context checks,
@@ -62,8 +66,13 @@ must already be observed at their target, not merely queued for retry.
 
 Reuse a scan ID only for the exact same URI/range/explicit asset request. Use
 `existingAssetId` for explicit reanalysis. A completed scan can reuse its verified
-result when the file stamp, provider version and settings match; timestamp checks
-are not a lock against concurrent writers. A moved location requires a fresh scan.
+result when the file stamp, provider version, settings, asset file revision and
+current analysis artifact ID all match. Legacy scans without this linkage are
+reanalyzed. A cache hit also refreshes availability when a missing file returns.
+Timestamp checks are not a lock against concurrent writers. A moved location
+requires a fresh scan. `sourceState: 'unverified'` blocks both cache reuse and
+organization; reanalysis clears it, but previously invalidated clip ranges still
+require review. `acceptedUnknowns` cannot bypass source or date confirmation.
 To retry a failed Job in place, supply `retryJobId`; completed/cancelled Jobs start
 a new Job. Partial item failures still produce a completed Job when its results
 were safely stored. Storage failures never produce success.

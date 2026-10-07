@@ -66,6 +66,13 @@ export const ScanRecordSchema = ScanInputSchema.extend({
   state: z.enum(["queued", "running", ...IngestItemSchema.shape.state.options]),
   step: z.enum(["queued", "reading", "done"]),
   stamp: FileStampSchema.optional(),
+  verifiedAnalysis: z
+    .object({
+      fileRevision: z.number().int().positive(),
+      artifactId: z.string().min(1),
+    })
+    .strict()
+    .optional(),
   result: IngestItemSchema.optional(),
   providerVersion: z.string(),
   settingsKey: z.string(),

@@ -12,9 +12,12 @@ import {
   type CatalogState,
   type CatalogStore,
   type IdFactory,
+  type AssetRecord,
 } from "./catalog.js";
 import {
   type ScanInput,
+  type ScanRecord,
+  type FileStamp,
   type ReadOnlyFiles,
   type IngestResult,
   type IngestItemResult,
@@ -62,6 +65,52 @@ class ItemFailure extends Error {
 const checkAbort = (ctx?: ProviderContext) => {
   if (ctx?.signal?.aborted) throw new ItemFailure("cancelled", "cancelled");
 };
+
+function reusableScan(
+  scan: ScanRecord | undefined,
+  asset: AssetRecord | undefined,
+  stamp: FileStamp,
+  deps: IngestDependencies,
+): scan is ScanRecord & { result: IngestItemResult } {
+  return !!(
+    scan?.result &&
+    scan.stamp &&
+    scan.verifiedAnalysis &&
+    asset?.analysis &&
+    scan.result.assetId === asset.asset.id &&
+    ["registered", "unchanged"].includes(scan.state) &&
+    asset.sourceState !== "unverified" &&
+    asset.analysis.artifact.status === "valid" &&
+    scan.verifiedAnalysis.fileRevision === asset.fileRevision &&
+    scan.verifiedAnalysis.artifactId === asset.analysis.artifact.id &&
+    scan.providerVersion === deps.providerVersion &&
+    scan.settingsKey === deps.settingsKey &&
+    asset.analysis.providerVersion === deps.providerVersion &&
+    asset.analysis.settingsKey === deps.settingsKey &&
+    sameStamp(scan.stamp, stamp)
+  );
+}
+
+function invalidateRanges(state: CatalogState, asset: AssetRecord): void {
+  const clips = state.clips.filter((x) => x.mediaAssetId === asset.asset.id);
+  for (const clip of clips) {
+    const cs = state.clipStates.find((x) => x.clipId === clip.id);
+    if (cs) cs.reviewState = "needs_review";
+    else
+      state.clipStates.push({
+        clipId: clip.id,
+        fileRevision: asset.fileRevision,
+        reviewState: "needs_review",
+      });
+  }
+  for (const annotation of state.annotations) {
+    const related =
+      annotation.target.kind === "asset"
+        ? annotation.target.id === asset.asset.id
+        : clips.some((c) => c.id === annotation.target.id);
+    if (related && annotation.range) annotation.reviewState = "needs_review";
+  }
+}
 
 /** Each result is committed with its asset before reporting success. */
 export async function ingest(
@@ -116,7 +165,7 @@ export async function ingest(
   job = moveJob(job, "running");
   putJob(state);
   await deps.store.commit(state.revision, state);
-  const seen = new Map<string, IngestItemResult>();
+  const seen = new Map<string, ScanRecord>();
   try {
     for (const input of inputs) {
       state = await deps.store.read();
@@ -133,41 +182,47 @@ export async function ingest(
       else state.scans[state.scans.indexOf(prior)] = { ...prior, ...scan };
       state = await deps.store.commit(state.revision, state);
       const working = state.scans.find((x) => x.scanId === input.scanId)!;
+      const duplicate = seen.get(requestKey(input));
+      const existingId =
+        input.existingAssetId ??
+        prior?.result?.assetId ??
+        duplicate?.result?.assetId;
+      const existingClipId = prior?.result?.clipId ?? duplicate?.result?.clipId;
+      let sourceAccessStarted = false,
+        contentChanged = false;
       try {
         checkAbort(ctx);
-        const boundAsset = state.assets.find(
-          (x) => x.asset.id === prior?.result?.assetId,
-        );
+        const boundAsset = state.assets.find((x) => x.asset.id === existingId);
         if (boundAsset && !boundAsset.locations.includes(input.uri))
           throw new ItemFailure(
             "unsupported",
             "scan location changed; create a new scan",
           );
+        sourceAccessStarted = true;
         const before = FileStampSchema.parse(await deps.files.stat(input.uri));
-        const cachedAsset =
-          prior?.result?.assetId &&
-          state.assets.find((x) => x.asset.id === prior.result?.assetId);
-        const duplicate = seen.get(requestKey(input));
-        if (
-          duplicate?.assetId &&
-          ["registered", "unchanged"].includes(duplicate.state)
-        ) {
-          result = { ...duplicate, scanId: input.scanId, state: "unchanged" };
-        } else if (
-          prior?.stamp &&
-          cachedAsset &&
-          prior.providerVersion === deps.providerVersion &&
-          prior.settingsKey === deps.settingsKey &&
-          sameStamp(before, prior.stamp) &&
-          ["registered", "unchanged"].includes(prior.state)
-        ) {
-          result = { ...prior.result!, state: "unchanged" };
+        const cache = [duplicate, prior].find((x) =>
+          reusableScan(x, boundAsset, before, deps),
+        );
+        if (cache) {
+          checkAbort(ctx);
+          result = {
+            ...cache.result!,
+            scanId: input.scanId,
+            state: "unchanged",
+          };
+          working.stamp = before;
+          working.verifiedAnalysis = cache.verifiedAnalysis;
+          boundAsset!.availability = "online";
+          boundAsset!.sourceState = "verified";
         } else {
           const hash = z
             .string()
             .regex(/^[0-9a-fA-F]{64}$/)
             .parse(await deps.files.sha256(input.uri, ctx))
             .toLowerCase();
+          contentChanged =
+            !!boundAsset &&
+            boundAsset.asset.fingerprint.value.toLowerCase() !== hash;
           checkAbort(ctx);
           const probe = ProbeRecordSchema.parse(
             await deps.probe.probe({ uri: input.uri }, ctx),
@@ -180,9 +235,6 @@ export async function ingest(
               "file changed during analysis",
             );
           checkAbort(ctx);
-          const existingId =
-            input.existingAssetId ||
-            (cachedAsset ? cachedAsset.asset.id : undefined);
           const old = state.assets.find((x) => x.asset.id === existingId);
           const changed =
             old && old.asset.fingerprint.value.toLowerCase() !== hash;
@@ -209,6 +261,7 @@ export async function ingest(
             locations: old?.locations ?? [input.uri],
             duration: probe.duration,
             availability: "online" as const,
+            sourceState: "verified" as const,
             probe,
             analysis: {
               artifact,
@@ -231,35 +284,10 @@ export async function ingest(
             );
           if (range && probe.duration)
             validateBoundedTimeRange(range, probe.duration);
-          let clipId = prior?.result?.clipId;
+          let clipId = existingClipId;
           if (old) {
             state.assets[state.assets.indexOf(old)] = record;
-            if (changed)
-              for (const c of state.clips.filter(
-                (x) => x.mediaAssetId === assetId,
-              )) {
-                const cs = state.clipStates.find((x) => x.clipId === c.id);
-                if (cs) cs.reviewState = "needs_review";
-                else
-                  state.clipStates.push({
-                    clipId: c.id,
-                    fileRevision: old.fileRevision,
-                    reviewState: "needs_review",
-                  });
-              }
-            if (changed)
-              for (const annotation of state.annotations) {
-                const related =
-                  annotation.target.kind === "asset"
-                    ? annotation.target.id === assetId
-                    : state.clips.some(
-                        (c) =>
-                          c.id === annotation.target.id &&
-                          c.mediaAssetId === assetId,
-                      );
-                if (related && annotation.range)
-                  annotation.reviewState = "needs_review";
-              }
+            if (changed) invalidateRanges(state, old);
           } else state.assets.push(record);
           if (!old && range) {
             clipId = makeId(deps.ids);
@@ -322,8 +350,11 @@ export async function ingest(
             clipId,
           };
           working.stamp = after;
+          working.verifiedAnalysis = {
+            fileRevision: revision,
+            artifactId: artifact.id,
+          };
         }
-        working.stamp ??= before;
       } catch (error) {
         // Roll back tentative in-memory asset/probe changes on any item error.
         state = await deps.store.read();
@@ -337,16 +368,25 @@ export async function ingest(
         result = {
           scanId: input.scanId,
           state: status,
-          assetId: input.existingAssetId ?? prior?.result?.assetId,
-          clipId: prior?.result?.clipId,
+          assetId: existingId,
+          clipId: existingClipId,
           error: { code: code ?? status, message: message(error) },
         };
-        if (status === "offline") {
-          const existing = input.existingAssetId ?? prior?.result?.assetId;
-          const asset = state.assets.find((x) => x.asset.id === existing);
-          if (asset && asset.locations.includes(input.uri))
+        const asset = state.assets.find((x) => x.asset.id === existingId);
+        if (
+          sourceAccessStarted &&
+          asset &&
+          asset.locations.includes(input.uri)
+        ) {
+          if (status === "offline")
             asset.availability =
               asset.locations.length === 1 ? "offline" : "unknown";
+          // Keep the last valid artifact, but do not authorize its use until a
+          // complete stable analysis succeeds. A previous scan cannot clear this.
+          if (status !== "offline" || contentChanged)
+            asset.sourceState = "unverified";
+          if (contentChanged || status === "changed_during_read")
+            invalidateRanges(state, asset);
         }
       }
       const finalScan = state.scans.find((x) => x.scanId === input.scanId)!;
@@ -356,7 +396,7 @@ export async function ingest(
       row.items = [...items, result];
       await deps.store.commit(state.revision, state);
       items.push(result);
-      seen.set(requestKey(input), result);
+      seen.set(requestKey(input), finalScan);
     }
     job = moveJob(job, ctx?.signal?.aborted ? "cancelled" : "completed");
   } catch (error) {

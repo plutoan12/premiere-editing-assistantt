@@ -61,7 +61,12 @@ export const AnnotationSchema = z
 export type Annotation = z.infer<typeof AnnotationSchema>;
 export type ResolvedMetadata = {
   value?: string;
-  status: "rule_match" | "user_confirmed" | "missing" | "conflict";
+  status:
+    | "rule_match"
+    | "user_confirmed"
+    | "missing"
+    | "conflict"
+    | "needs_review";
   reasons: string[];
 };
 export function validDate(value: string): boolean {
@@ -108,6 +113,21 @@ export function resolveMetadata(input: MetadataRecord): ResolvedMetadata {
   if (values.length > 1) return { status: "conflict", reasons };
   if (!values.length)
     return { status: "missing", reasons: ["no usable observation"] };
+  if (
+    row.field === "captureDate" &&
+    candidates.some(
+      (x) =>
+        (x.source === "probe" || x.source === "host") && !x.timezone?.trim(),
+    )
+  )
+    return {
+      value: values[0],
+      status: "needs_review",
+      reasons: [
+        ...reasons,
+        "capture date timezone is unknown; confirm the date",
+      ],
+    };
   return { value: values[0], status: "rule_match", reasons };
 }
 export function assetForTarget(target: CatalogTarget, state: CatalogState) {

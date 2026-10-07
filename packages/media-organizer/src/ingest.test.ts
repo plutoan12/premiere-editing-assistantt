@@ -219,3 +219,202 @@ it("does not use a replaced old location to overwrite a relocated asset", async 
     "a".repeat(64),
   );
 });
+
+it("reanalyses a duplicate request when its source stamp changed", async () => {
+  const d = setup();
+  let reads = 0,
+    hashes = 0;
+  d.files.stat = async () => ({ ...stamp, mtimeNs: ++reads <= 2 ? 1n : 2n });
+  d.files.sha256 = async () => (++hashes === 1 ? "a" : "b").repeat(64);
+  const r = await media.ingest([input(), input(2, input().uri)], d);
+  const s = await d.store.read();
+  expect(hashes).toBe(2);
+  expect(s.assets).toHaveLength(1);
+  expect(s.assets[0].asset.fingerprint.value).toBe("b".repeat(64));
+  expect(s.assets[0].fileRevision).toBe(2);
+  expect(r.items[1].assetId).toBe(r.items[0].assetId);
+  await media.ingest([input(2, input().uri)], d);
+  expect(hashes).toBe(2);
+});
+
+it("reuses a stable duplicate without hashing again", async () => {
+  const d = setup();
+  let hashes = 0;
+  d.files.sha256 = async () => {
+    hashes++;
+    return "a".repeat(64);
+  };
+  const r = await media.ingest([input(), input(2, input().uri)], d);
+  expect(hashes).toBe(1);
+  expect(r.items.map((x) => x.state)).toEqual(["registered", "unchanged"]);
+  expect((await d.store.read()).assets).toHaveLength(1);
+});
+
+it("blocks changed sources after failed probing while preserving user data", async () => {
+  const d = setup();
+  await media.ingest([input()], d);
+  let before = await d.store.read();
+  const target = { kind: "clip" as const, id: before.clips[0].id };
+  before = media.upsertAnnotation(before, {
+    id: id(70),
+    target,
+    kind: "note",
+    value: "keep this range",
+    range: before.clips[0].sourceRange,
+    origin: "user",
+    reviewState: "confirmed",
+  });
+  before = await d.store.commit(before.revision, before);
+  const probe = d.probe.probe;
+  d.files.stat = async () => ({ ...stamp, mtimeNs: 2n });
+  d.files.sha256 = async () => "b".repeat(64);
+  d.probe.probe = async () => {
+    throw new Error("decoder unavailable");
+  };
+  const result = await media.ingest([input()], d);
+  const s = await d.store.read();
+  const rules = { ...media.defaultRuleSet(id(80)), orderedFields: [] };
+  const targets = [
+    target,
+    { kind: "asset" as const, id: s.assets[0].asset.id },
+  ];
+  expect(result.items[0].state).toBe("failed");
+  expect(
+    media.buildOrganizationPlan(s, targets, rules, targets, d.ids).assignments,
+  ).toEqual([]);
+  expect(s.assets[0].analysis).toEqual(before.assets[0].analysis);
+  expect(s.clips).toEqual(before.clips);
+  expect(s.clipStates[0].reviewState).toBe("needs_review");
+  expect(s.annotations[0]).toMatchObject({
+    value: "keep this range",
+    reviewState: "needs_review",
+  });
+  d.probe.probe = probe;
+  await media.ingest([input()], d);
+  const recovered = await d.store.read();
+  expect(recovered.assets[0].fileRevision).toBe(2);
+  expect(
+    media.buildOrganizationPlan(recovered, [targets[1]], rules, [], d.ids)
+      .assignments,
+  ).toHaveLength(1);
+  expect(
+    media.buildOrganizationPlan(recovered, [target], rules, [], d.ids)
+      .assignments,
+  ).toEqual([]);
+});
+
+it("does not reuse a historical scan after an unstable failed read", async () => {
+  const d = setup();
+  await media.ingest([input()], d);
+  const originalId = (await d.store.read()).assets[0].asset.id;
+  let reads = 0;
+  d.files.stat = async () => ({ ...stamp, mtimeNs: BigInt(++reads) });
+  const failed = await media.ingest(
+    [{ ...input(2, input().uri), existingAssetId: originalId }],
+    d,
+  );
+  expect(failed.items[0].state).toBe("changed_during_read");
+  const s = await d.store.read();
+  const rules = { ...media.defaultRuleSet(id(80)), orderedFields: [] };
+  const target = { kind: "asset" as const, id: originalId };
+  expect(
+    media.buildOrganizationPlan(s, [target], rules, [], d.ids).assignments,
+  ).toEqual([]);
+  d.files.stat = async () => ({ ...stamp });
+  let hashes = 0;
+  d.files.sha256 = async () => {
+    hashes++;
+    return "a".repeat(64);
+  };
+  await media.ingest([input()], d);
+  expect(hashes).toBe(1);
+});
+
+it.each(["providerVersion", "settingsKey"] as const)(
+  "binds completed scans to the current analysis %s",
+  async (key) => {
+    const d = setup();
+    let probes = 0;
+    const probe = d.probe.probe;
+    d.probe.probe = async (x) => {
+      probes++;
+      return probe(x);
+    };
+    await media.ingest([input()], d);
+    const originalId = (await d.store.read()).assets[0].asset.id;
+    const first = d[key];
+    d[key] = "v2";
+    await media.ingest(
+      [{ ...input(2, input().uri), existingAssetId: originalId }],
+      d,
+    );
+    d[key] = first;
+    await media.ingest([input()], d);
+    expect(probes).toBe(3);
+    expect((await d.store.read()).assets[0].analysis?.[key]).toBe(first);
+  },
+);
+
+it("invalidates an old scan when another scan replaced its analysis generation", async () => {
+  const d = setup();
+  let hashes = 0;
+  d.files.sha256 = async () => {
+    hashes++;
+    return "a".repeat(64);
+  };
+  await media.ingest([input()], d);
+  const originalId = (await d.store.read()).assets[0].asset.id;
+  await media.ingest(
+    [{ ...input(2, input().uri), existingAssetId: originalId }],
+    d,
+  );
+  await media.ingest([input()], d);
+  expect(hashes).toBe(3);
+});
+
+it("invalidates an old scan when another scan changed the asset revision", async () => {
+  const d = setup();
+  await media.ingest([input()], d);
+  const originalId = (await d.store.read()).assets[0].asset.id;
+  d.files.stat = async () => ({ ...stamp, mtimeNs: 2n });
+  d.files.sha256 = async () => "b".repeat(64);
+  await media.ingest(
+    [{ ...input(2, input().uri), existingAssetId: originalId }],
+    d,
+  );
+  d.files.stat = async () => ({ ...stamp });
+  d.files.sha256 = async () => "a".repeat(64);
+  await media.ingest([input()], d);
+  const s = await d.store.read();
+  expect(s.assets[0].asset.fingerprint.value).toBe("a".repeat(64));
+  expect(s.assets[0].fileRevision).toBe(3);
+});
+
+it("restores availability when a verified unchanged source returns", async () => {
+  const d = setup();
+  await media.ingest([input()], d);
+  const originalId = (await d.store.read()).assets[0].asset.id;
+  d.files.stat = async () => {
+    throw Object.assign(new Error("missing"), { code: "ENOENT" });
+  };
+  await media.ingest(
+    [{ ...input(2, input().uri), existingAssetId: originalId }],
+    d,
+  );
+  expect((await d.store.read()).assets[0].availability).toBe("offline");
+  d.files.stat = async () => ({ ...stamp });
+  const r = await media.ingest([input()], d);
+  expect(r.items[0].state).toBe("unchanged");
+  const s = await d.store.read();
+  expect(s.assets[0].availability).toBe("online");
+  const target = { kind: "clip" as const, id: s.clips[0].id };
+  expect(
+    media.buildOrganizationPlan(
+      s,
+      [target],
+      { ...media.defaultRuleSet(id(80)), orderedFields: [] },
+      [],
+      d.ids,
+    ).assignments,
+  ).toHaveLength(1);
+});

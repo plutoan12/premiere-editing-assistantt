@@ -72,15 +72,19 @@ export function buildOrganizationPlan(
         ? asset.availability === "offline"
           ? "offline"
           : "availability_unknown"
-        : clipState &&
-            (clipState.fileRevision !== asset.fileRevision ||
-              clipState.reviewState === "needs_review")
-          ? "source_changed"
-          : result.status === "conflict"
-            ? "conflict"
-            : result.requiresReview && !accepted.has(targetKey(target))
-              ? "missing"
-              : undefined;
+        : asset.sourceState === "unverified"
+          ? "source_unverified"
+          : clipState &&
+              (clipState.fileRevision !== asset.fileRevision ||
+                clipState.reviewState === "needs_review")
+            ? "source_changed"
+            : result.status === "conflict"
+              ? "conflict"
+              : result.status === "needs_review"
+                ? "metadata_unconfirmed"
+                : result.requiresReview && !accepted.has(targetKey(target))
+                  ? "missing"
+                  : undefined;
     if (code) plan.issues.push({ target, code, reasons: result.reasons });
     else
       plan.assignments.push({
