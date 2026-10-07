@@ -1,0 +1,7 @@
+{
+  "name": "@pea/premiere-graphics-panel",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": { "build": "node build.cjs" },
+  "devDependencies": { "typescript": "^5.9.2" }
+}

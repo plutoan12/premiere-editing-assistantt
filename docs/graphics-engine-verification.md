@@ -102,3 +102,69 @@ focused on Graphics. Core PR #1 remains unmerged into main.
   dependency setup. The follow-up commit's CI result is reported on PR #15.
 - Real Premiere rendering/host integration remains the only unrun integration layer;
   no host API call or project write was added by this correction.
+
+## UXP template preview — 2026-10-07
+
+Added an actual host boundary and development panel. `createMogrtPreviewRequest`
+converts an engine decision to exact Premiere ticks. `previewPremiereMogrt` creates a
+new sequence and inserts/trims the ORIGINAL template. It verifies the sequence rate,
+frame size, clip start and clip end before returning `preview-created`. Every outcome
+has `graphicsApplied: false`; caption text/style/emphasis/placement/property overrides
+remain unapplied. The prior compiler still returns only planned/unsupported.
+
+### Automated verification
+
+- Test-first host boundary: 19 new tests failed because the function did not exist,
+  then passed after implementation. Coverage includes malformed requests, wrong project,
+  occupied destination, false transaction, unknown import failure, ignored trim and
+  concurrent preview attempts. Premiere calls are modeled by a structural API fake;
+  these tests do not prove Adobe behavior.
+- Plan-to-preview conversion: 3 tests for exact NTSC ticks, exact decision/version binding
+  and the host bigint limit. Engine bigint capacity itself remains unchanged.
+- Full direct Vitest run: exit 0, **20 files / 142 tests passed**.
+- Graphics and Premiere adapter TypeScript checks: exit 0.
+- Panel development build using the existing TypeScript installation: exit 0.
+- Independent read-only review found no critical/important issue. Its minor finding
+  about direct host objects in the property inspector was addressed by distinguishing
+  `host-object` from unavailable values; no full-rendering support is inferred.
+
+### Actual Premiere exploration
+
+Premiere Pro **26.5.2** on macOS, local UXP Developer Tools. A throwaway probe was loaded
+successfully without changing developer/security settings. It created a separate test
+project and two new test sequences; no pre-existing media sequence was edited.
+
+- Basic Lower Third: returned one inserted item, start ticks `0`, end ticks
+  `1239566328000`. Components included Opacity, Motion and Graphic Group, with no exposed
+  text component.
+- Gaming Lower Third Left (AE): returned one inserted item, start ticks `0`, end ticks
+  `2034160128000`. The Capsule component was initially absent and appeared in a later
+  read after loading. It had 14 parameters; title and subtitle keyframe values were null.
+  Numeric values such as animation speed were readable.
+- The default test sequence reported frame ticks `10594584000`, width 1920, height 1080.
+
+These observations verify insertion and property inspection only. They do **not** verify
+caption rendering, typography, planned placement, pixel fidelity, or the final module's
+settings/trim/readback sequence. Adobe template binaries and local project files are
+not redistributed in the repository.
+
+### Pending final host replay
+
+Another task briefly used the same development-tool UI, so its open dialog was left
+alone. Before the final replay, computer access reported that the **Mac is locked and
+requires manual unlock**. The final production panel and adapter were therefore NOT
+claimed to pass live smoke. Initial exploration above ran before the lock.
+
+After unlocking, build/load `apps/premiere-graphics-panel/dist/manifest.json`, choose a
+disposable project and Basic Lower Third, then run the default preview. Expected:
+
+- New sequence only, 1920×1080, frame ticks `8475667200` (30000/1001 fps).
+- Start ticks `508540032000` (frame 60), end ticks `762810048000` (frame 90).
+- `preview-created`, `graphicsApplied:false`, and the unapplied-field list.
+- Export the receipt and visually review the template. Repeat with the AE template
+  after loading finishes. Treat failures as needs-review; inspect remaining edits.
+
+The panel does not save projects automatically. Host import and trim are separate
+undo operations; the implementation does not claim atomic rollback. Template identity
+and version are selected by the caller/user, not inferred from the filename. The
+physical frame rate is configured, while drop-frame timecode display labels are not.

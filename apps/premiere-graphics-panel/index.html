@@ -1,0 +1,17 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+body{padding:16px;color:#eee;background:#252525;font-size:14px}h1{font-size:20px}p{line-height:1.5}button{margin:4px 0;min-height:32px}textarea{width:100%;height:210px;margin-top:12px}#status{color:#c8e0ff}
+</style></head><body>
+<h1>그래픽 미리보기</h1>
+<p>선택한 MOGRT를 새 시퀀스에 넣어 모양과 길이를 확인합니다. 템플릿의 원래 문구와 스타일이 표시됩니다.</p>
+<p>계획의 자막 문구·스타일·강조·배치·속성은 아직 적용되지 않습니다.</p>
+<button id="template">MOGRT 선택</button>
+<button id="request">미리보기 계획 불러오기</button>
+<p id="summary">기본 미리보기: 1920×1080, 29.97fps, 2.002초부터 1.001초</p>
+<button id="preview" disabled>새 시퀀스에서 미리보기</button>
+<button id="inspect" disabled>템플릿 속성 확인</button>
+<button id="export" disabled>결과 저장</button>
+<p id="status">템플릿을 선택하세요.</p>
+<textarea id="result" readonly aria-label="미리보기 결과"></textarea>
+<script src="main.js"></script>
+</body></html>

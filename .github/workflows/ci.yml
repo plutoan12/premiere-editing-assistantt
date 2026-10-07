@@ -16,3 +16,4 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm test
       - run: pnpm typecheck
+      - run: pnpm --filter @pea/premiere-graphics-panel build

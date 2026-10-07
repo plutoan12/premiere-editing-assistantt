@@ -1,0 +1,10 @@
+{
+  "manifestVersion": 5,
+  "id": "local.pea.graphics.preview",
+  "name": "PEA Graphics Preview",
+  "version": "0.1.0",
+  "main": "index.html",
+  "host": { "app": "premierepro", "minVersion": "26.2.0" },
+  "entrypoints": [{"type":"panel","id":"graphics-preview","label":{"default":"PEA Graphics Preview"},"minimumSize":{"width":320,"height":400},"preferredFloatingSize":{"width":520,"height":650}}],
+  "requiredPermissions": { "localFileSystem": "request" }
+}

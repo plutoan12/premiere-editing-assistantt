@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { planGraphics } from "@pea/graphics";
-import { compilePremiereGraphicsPlan } from "./index.js";
+import { compilePremiereGraphicsPlan, createMogrtPreviewRequest } from "./index.js";
 
 const fps = { rate: { numerator: 30000, denominator: 1001 }, dropFrame: true };
 const time = (ticks: bigint) => ({ ticks, timebase: { numerator: 1001, denominator: 30000 } });
@@ -60,5 +60,22 @@ describe("Premiere graphics plan compiler", () => {
     const plan = createPlan(); plan.issues.push({ requestId: "b", code: "NO_PLACEMENT", severity: "error", message: "no fit" });
     expect(() => compilePremiereGraphicsPlan(plan, context())).toThrow(/partial/i);
     expect(compilePremiereGraphicsPlan(plan, { ...context(), allowPartial: true }).status).toBe("planned");
+  });
+});
+
+
+describe("graphics plan to Premiere preview", () => {
+  it("converts planned NTSC timing exactly and labels unapplied graphics as a preview", () => {
+    const result = createMogrtPreviewRequest(createPlan(), "a", context().bindings[0]);
+    expect(result).toMatchObject({mode:"template-preview",startTicks:"508540032000",durationTicks:"254270016000",frameTicks:"8475667200",canvas:{width:1920,height:1080}});
+    expect(() => JSON.stringify(result)).not.toThrow();
+  });
+  it("requires the exact decision and template version", () => {
+    expect(() => createMogrtPreviewRequest(createPlan(), "missing", context().bindings[0])).toThrow(/DECISION/);
+    expect(() => createMogrtPreviewRequest(createPlan(), "a", {...context().bindings[0],templateVersion:"2"})).toThrow(/BINDING/);
+  });
+  it("rejects a valid engine plan whose ticks overflow the host boundary", () => {
+    const plan=createPlan();plan.graphics[0].decision.range.start.ticks=10n**40n;
+    expect(() => createMogrtPreviewRequest(plan,"a",context().bindings[0])).toThrow(/INVALID_TICKS/);
   });
 });
