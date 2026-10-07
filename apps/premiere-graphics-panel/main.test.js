@@ -6,7 +6,7 @@ import * as textModule from '../../adapters/premiere/src/uxp-mogrt-text.ts';
 
 // Exercise panel event wiring/state with host/file boundaries replaced. No claim
 // about UXP's layout or 27.x native rendering is made by these Node tests.
-function panel(supported=true) {
+function panel(supported=true,writeVerified=textModule.MOGRT_TEXT_WRITE_VERIFIED) {
   const nodes=new Map(),handlers=new Map(),selectedFiles=[];
   const node=id=>{if(!nodes.has(id))nodes.set(id,{value:'',textContent:'',disabled:false,children:[],
     addEventListener:(event,fn)=>handlers.set(`${id}:${event}`,fn),
@@ -15,7 +15,7 @@ function panel(supported=true) {
   const target={componentIndex:2,componentMatchName:'Text',parameterIndex:0,parameterName:'제목',
     before:{text:'원본',fontName:'Font',fontSize:48},fontNameEditable:false,fontSizeEditable:true};
   const targets=[target];
-  const fakeText={...textModule,inspectPremiereMogrtText:async()=>({status:'ready',targets,skipped:[]}),
+  const fakeText={...textModule,MOGRT_TEXT_WRITE_VERIFIED:writeVerified,inspectPremiereMogrtText:async()=>({status:'ready',targets,skipped:[]}),
     applyPremiereMogrtText:async(_api,_inspection,index,input)=>{edits.push({index,input});return {status:editStatus,graphicsApplied:false};}};
   const preview={status:'preview-created',projectId:'p',sequenceId:'s',decisionId:'manual-preview',items:[{name:'Title'}]};
   const ppro={MogrtText:supported?class {}:undefined,Project:{getActiveProject:async()=>({guid:{toString:()=> 'p'}})}};
@@ -35,6 +35,18 @@ function panel(supported=true) {
   return {node,event,create,selectedFiles,edits,targets,setStatus:s=>{editStatus=s;}};
 }
 describe('editable text panel',()=>{
+  it('keeps production text inspection available but blocks writes even if the click handler is invoked',async()=>{
+    const p=panel();await p.create();
+    expect(p.node('inspect-text').disabled).toBe(false);
+    await p.event('inspect-text');p.node('text-target').value='0';await p.event('text-target','change');
+    expect(p.node('caption-text').value).toBe('원본');
+    for(const id of ['caption-text','font-name','font-size','apply-text'])expect(p.node(id).disabled).toBe(true);
+    p.node('caption-text').value='직접 입력';await p.event('apply-text');
+    expect(p.edits).toEqual([]);
+    expect(p.node('status').textContent).toContain('적용은 중지');
+    expect(JSON.parse(p.node('result').value).textEdits).toBeUndefined();
+    expect(p.node('inspect-text').disabled).toBe(false);
+  });
   it('keeps editing disabled on hosts without the text API while retaining preview',async()=>{
     const p=panel(false);await p.create();
     expect(p.node('inspect-text').disabled).toBe(true);
@@ -43,7 +55,7 @@ describe('editable text panel',()=>{
     expect(JSON.parse(p.node('result').value).status).toBe('preview-created');
   });
   it('requires explicit target selection and preserves unspecified font settings',async()=>{
-    const p=panel();await p.create();await p.event('inspect-text');
+    const p=panel(true,true);await p.create();await p.event('inspect-text');
     expect(p.node('apply-text').disabled).toBe(true);
     p.node('text-target').value='0';await p.event('text-target','change');
     expect(p.node('font-name').disabled).toBe(true);
@@ -54,7 +66,7 @@ describe('editable text panel',()=>{
     expect(JSON.parse(p.node('result').value).textEdits[0].status).toBe('text-updated');
   });
   it('distinguishes identical text parameters within the same component',async()=>{
-    const p=panel();p.targets.push({...p.targets[0],parameterIndex:1});
+    const p=panel(true,true);p.targets.push({...p.targets[0],parameterIndex:1});
     await p.create();await p.event('inspect-text');
     const options=p.node('text-target').children.slice(1);
     expect(options).toHaveLength(2);
@@ -72,7 +84,7 @@ describe('editable text panel',()=>{
     expect(p.node('text-target').value).toBe('');
   });
   it('requires manual review after an uncertain write and prevents reinspection/retry',async()=>{
-    const p=panel();await p.create();await p.event('inspect-text');p.node('text-target').value='0';await p.event('text-target','change');
+    const p=panel(true,true);await p.create();await p.event('inspect-text');p.node('text-target').value='0';await p.event('text-target','change');
     p.setStatus('needs-review');await p.event('apply-text');
     expect(p.node('inspect-text').disabled).toBe(true);
     expect(p.node('apply-text').disabled).toBe(true);

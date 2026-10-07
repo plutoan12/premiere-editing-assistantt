@@ -5,9 +5,11 @@ verification: apply caption text, styling and placement in Premiere. The current
 preview remains usable; its `graphicsApplied:false` result is still accurate.
 
 Latest environment update: the user subsequently approved Premiere Beta installation.
-**27.1.0.7** is now installed alongside 26.5.2.5. The panel detects `MogrtText`, but
-typed text inspection, edits and readback are still pending. See the
-[installation and partial verification record](graphics-engine-verification.md#authorized-beta-installation--2026-10-08).
+**27.1.0.7** is now installed alongside 26.5.2.5. AE title/subtitle inspection succeeds,
+but text transactions cause an unsupported MogrtText encoding error on readback.
+**Panel writes are disabled**; original previews and typed text inspection remain usable.
+Basic Lower Third still returns null source-text values. See the
+[beta text verification record](graphics-engine-verification.md#beta-text-verification-and-write-gate--2026-10-08).
 The compatibility investigation below describes the earlier 26.5.2 environment.
 
 ## Confirmed compatibility boundary
@@ -31,9 +33,9 @@ test, upgrade, dependency installation or new caption write was performed here.
 ## Selected route: editable MOGRT text
 
 The user selected **route 2** on 2026-10-08. The panel now includes a capability-gated,
-uniform text/font editing path. It keeps the result editable in the MOGRT instead of
-rasterizing it. The 26.5.2 host cannot verify this newer API; text readback and visual
-verification on the subsequently installed 27.1 beta are still pending.
+uniform text/font editing path intended to preserve MOGRT editability. The 26.5.2 host
+cannot verify this newer API. Subsequent live 27.1 testing established readable AE text
+but failed write readback, so `MOGRT_TEXT_WRITE_VERIFIED` keeps production writes off.
 
 | Route | User-visible result | Work still required |
 | --- | --- | --- |
@@ -54,8 +56,9 @@ exists. Core and the pure GraphicsPlan contracts remain unchanged.
   the actual clip/component/parameter objects and require the same live references:
   an asset ID alone cannot distinguish a replacement timeline occurrence. Hosts that
   return fresh wrappers are blocked with `TEXT_TARGET_IDENTITY_CHANGED`; stable wrapper
-  identity is an explicit pending 27.x compatibility requirement, never presumed from
-  matching names, times or values.
+  identity must be established on each supported host/template, never presumed from
+  matching names, times or values. Stable wrappers were observed for Basic Lower Third
+  on 27.1.0.7. A null project item is allowed, with live instance checks still required.
 - Check template-author font restrictions on the original value. Construct a detached
   text value, preserving all seven exposed text/font fields, then commit one locked
   transaction and compare every field after reading it back from the host.
@@ -74,6 +77,9 @@ Conflict detection is optimistic because SDK getters are asynchronous. It is not
 atomic compare-and-swap guarantee against simultaneous manual/other-plugin edits.
 Host object semantics, author restrictions, font substitutions, native UI and visual
 appearance require the 27.x smoke procedure in the panel README before release use.
+The low-level write function remains experimental for isolated diagnostics; the panel
+checks the release gate in both button state and the event handler. Re-enable it only
+after a supported write path passes real-host readback, recovery and visual checks.
 
 ## Primary evidence
 

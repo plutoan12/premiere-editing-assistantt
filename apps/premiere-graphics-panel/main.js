@@ -2,7 +2,8 @@
 const {entrypoints,storage}=require('uxp');
 const ppro=require('premierepro');
 const {previewPremiereMogrt,validateMogrtPreviewRequest}=require('./uxp-mogrt.js');
-const {inspectPremiereMogrtText,applyPremiereMogrtText,validateMogrtTextDraft}=require('./uxp-mogrt-text.js');
+const {inspectPremiereMogrtText,applyPremiereMogrtText,validateMogrtTextDraft,MOGRT_TEXT_WRITE_VERIFIED}=require('./uxp-mogrt-text.js');
+const writeBlockedMessage='문구를 읽을 수 있지만 적용은 중지되어 있습니다. Premiere 베타에서 적용 후 읽기 오류가 확인되었습니다.';
 const fs=storage.localFileSystem;
 let template=null,projectId=null,receipt=null,busy=false,installed=false;
 let textInspection=null,textDraft=null,textReviewRequired=false;
@@ -15,7 +16,7 @@ function buttons(){
   el('inspect').disabled=busy||!receipt?.sequenceId;el('export').disabled=busy||!receipt;
   el('inspect-text').disabled=busy||typeof ppro.MogrtText!=='function'||receipt?.status!=='preview-created'||textReviewRequired;
   el('text-target').disabled=busy||!textInspection?.targets.length||textReviewRequired;
-  const target=selectedTextTarget(),disabled=busy||!target||textReviewRequired;
+  const target=selectedTextTarget(),disabled=busy||!target||textReviewRequired||MOGRT_TEXT_WRITE_VERIFIED!==true;
   el('caption-text').disabled=disabled;el('apply-text').disabled=disabled;
   el('font-name').disabled=disabled||!target?.fontNameEditable;
   el('font-size').disabled=disabled||!target?.fontSizeEditable;
@@ -45,11 +46,11 @@ async function inspectText(){
   if(!receipt||textReviewRequired)throw Error('SUCCESSFUL_PREVIEW_REQUIRED');
   clearTextBinding();
   textInspection=await inspectPremiereMogrtText(ppro,receipt);
-  const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='수정할 문구를 선택하세요';el('text-target').appendChild(placeholder);
+  const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='확인할 문구를 선택하세요';el('text-target').appendChild(placeholder);
   textInspection.targets.forEach((target,index)=>{const option=document.createElement('option');option.value=String(index);
     option.textContent='문구 '+(index+1)+' · '+target.parameterName+' · '+target.before.text.slice(0,40);el('text-target').appendChild(option);});
   el('text-target').value='';receipt={...receipt,textInspection};show(receipt);
-  el('status').textContent=textInspection.status==='ready'?'수정할 문구를 선택하세요. 폰트 입력란을 비우면 현재 값을 유지합니다.':
+  el('status').textContent=textInspection.status==='ready'?(MOGRT_TEXT_WRITE_VERIFIED===true?'수정할 문구를 선택하세요. 폰트 입력란을 비우면 현재 값을 유지합니다.':writeBlockedMessage):
     textInspection.status==='unsupported'?'이 Premiere에서는 문구 편집을 지원하지 않습니다.':'편집 가능한 문구가 없습니다. 템플릿 로딩 후 다시 확인하세요. 혼합 스타일과 애니메이션 문구는 제외됩니다.';
 }
 function selectTextTarget(){
@@ -61,6 +62,7 @@ function selectTextTarget(){
   buttons();
 }
 async function applyText(){
+  if(MOGRT_TEXT_WRITE_VERIFIED!==true){el('status').textContent=writeBlockedMessage;return;}
   if(!selectedTextTarget()||textReviewRequired)throw Error('INSPECTION_REQUIRED');
   const edit={text:el('caption-text').value};
   if(el('font-name').value.trim())edit.fontName=el('font-name').value.trim();
@@ -102,6 +104,6 @@ async function exportReceipt(){const file=await fs.getFileForSaving('pea-graphic
 entrypoints.setup({panels:{'graphics-preview':{show(){if(installed)return;installed=true;
   for(const [id,work] of [['template',pickTemplate],['request',loadRequest],['preview',preview],['inspect',inspect],['inspect-text',inspectText],['apply-text',applyText],['export',exportReceipt]])el(id).addEventListener('click',guard(work));
   el('text-target').addEventListener('change',selectTextTarget);
-  el('text-help').textContent=typeof ppro.MogrtText==='function'?'문구 편집을 사용할 수 있습니다. 먼저 새 시퀀스에 미리보기를 만드세요.':'문구 편집에는 Premiere 27.0 베타의 텍스트 기능이 필요합니다. 현재 버전에서는 원본 미리보기를 사용할 수 있습니다.';
+  el('text-help').textContent=typeof ppro.MogrtText==='function'?(MOGRT_TEXT_WRITE_VERIFIED===true?'문구 편집을 사용할 수 있습니다. 먼저 새 시퀀스에 미리보기를 만드세요.':writeBlockedMessage):'문구 확인에는 Premiere 27.0 베타의 텍스트 기능이 필요합니다. 현재 버전에서는 원본 미리보기를 사용할 수 있습니다.';
   buttons();
 }}}});

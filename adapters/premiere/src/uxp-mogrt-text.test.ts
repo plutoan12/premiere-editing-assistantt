@@ -38,7 +38,7 @@ function fixture() {
   const component = { getMatchName: async () => "AE.ADBE Text", getParamCount: () => 1, getParam: () => param };
   const chain = { getComponentCount: () => 1, getComponentAtIndex: () => component };
   const item = { getName: async () => "Title", getStartTime: async () => ({ticks:"508540032000"}),
-    getEndTime: async () => ({ticks:"762810048000"}), getProjectItem: async () => ({getId:()=>"asset"}),
+    getEndTime: async () => ({ticks:"762810048000"}), getProjectItem: async ():Promise<{getId():string}|null> => ({getId:()=>"asset"}),
     getComponentChain: async () => chain };
   const track = {getTrackItems:()=>[item]};
   const sequence = {guid:{toString:()=>"sequence"},getVideoTrack:async()=>track};
@@ -77,6 +77,32 @@ describe("editable MOGRT text boundary",()=>{
     if(kind==="scalar")f.param.getStartValue=async()=>({value:{value:"text-like scalar"}});
     if(kind==="unavailable")f.param.getStartValue=async()=>null;
     expect(await host.inspectPremiereMogrtText(f.api,f.receipt)).toMatchObject({status:"no-editable-text",targets:[]});
+    expect(f.writes()).toBe(0);
+  });
+  it("reports unavailable text on a native graphic without a project item",async()=>{
+    const f=fixture();f.item.getProjectItem=async()=>null;f.param.getStartValue=async()=>null;
+    expect(await host.inspectPremiereMogrtText(f.api,f.receipt)).toMatchObject({status:"no-editable-text",targets:[],
+      skipped:[{code:"TEXT_VALUE_UNAVAILABLE"}]});
+    expect(f.writes()).toBe(0);
+  });
+  it("edits typed text without a project item when live instance identity is stable",async()=>{
+    const f=fixture();f.item.getProjectItem=async()=>null;
+    const i=await host.inspectPremiereMogrtText(f.api,f.receipt);
+    expect(await host.applyPremiereMogrtText(f.api,i,0,{text:"new"})).toMatchObject({status:"text-updated"});
+    expect(f.writes()).toBe(1);
+  });
+  it("rejects a replacement graphic even when both project items are null",async()=>{
+    const f=fixture();f.item.getProjectItem=async()=>null;
+    const i=await host.inspectPremiereMogrtText(f.api,f.receipt);
+    f.track.getTrackItems=()=>[{...f.item}];
+    expect(await host.applyPremiereMogrtText(f.api,i,0,{text:"new"})).toMatchObject({status:"blocked",code:"TEXT_TARGET_IDENTITY_CHANGED"});
+    expect(f.writes()).toBe(0);
+  });
+  it.each([true,false])("rejects project-item presence changing after inspection: initially null %s",async initiallyNull=>{
+    const f=fixture(),asset={getId:()=>"asset"};f.item.getProjectItem=async()=>initiallyNull?null:asset;
+    const i=await host.inspectPremiereMogrtText(f.api,f.receipt);
+    f.item.getProjectItem=async()=>initiallyNull?asset:null;
+    expect(await host.applyPremiereMogrtText(f.api,i,0,{text:"new"})).toMatchObject({status:"blocked",code:"PREVIEW_ITEM_CHANGED"});
     expect(f.writes()).toBe(0);
   });
   it("enforces author font restrictions but permits text-only edits",async()=>{

@@ -6,8 +6,9 @@ end, and read the actual start/end ticks back. Existing sequence contents are no
 as the insertion target. The panel does not save the project automatically.
 
 The original preview does not apply caption text, styling, emphasis, planned placement
-or template-property overrides. A separate **editable text** step is implemented for
-hosts exposing `MogrtText` (documented in the 27.0 beta API). Every receipt still has
+or template-property overrides. A separate **text inspection** step is available for
+hosts exposing `MogrtText` (documented in the 27.0 beta API). Experimental text writes
+are disabled after a real-host readback failure on 27.1.0.7. Every receipt still has
 `graphicsApplied: false`; text editing is not full-plan rendering.
 The panel must not be described as the full GraphicsPlan renderer. On local Premiere
 26.5.2, Basic Lower Third exposed two text components after loading, but their source-text
@@ -17,9 +18,10 @@ unavailable title/subtitle values after its Capsule component finished loading.
 The original preview panel at `ede9a2e` was verified in Premiere 26.5.2 with both templates: sequence settings,
 insertion, exact start/end readback, property inspection and visible original graphics.
 Receipt export was also verified. See the [host verification record](../../docs/graphics-engine-verification.md#final-production-panel-replay--2026-10-08).
-Premiere Beta 27.1.0 now loads the text-capable panel, and its native plan picker was
-replayed. Typed text inspection, writes, readback and undo are still unverified. See
-the [beta installation record](../../docs/graphics-engine-verification.md#authorized-beta-installation--2026-10-08).
+Premiere Beta 27.1.0.7 reads the AE template's title and subtitle, but all tested writes
+caused an unsupported MogrtText encoding error on readback. Basic Lower Third's text
+values remain unavailable. See the
+[beta text verification record](../../docs/graphics-engine-verification.md#beta-text-verification-and-write-gate--2026-10-08).
 
 ## Build and load
 
@@ -79,21 +81,28 @@ frame timing is preserved and checked against the created sequence's timebase.
 - [SequenceSettings](https://developer.adobe.com/premiere-pro/uxp/ppro-reference/classes/sequencesettings)
 - [Project transactions](https://developer.adobe.com/premiere-pro/uxp/ppro-reference/classes/project)
 
-## Editable text (27.0 beta API; host verification pending)
+## Text inspection (27.0 beta API; writes blocked)
 
-1. Make a preview in a disposable project. Choose **편집할 문구 확인** after the
+1. Make a preview in a disposable project. Choose **템플릿 문구 확인** after the
    template finishes loading. On hosts without `MogrtText`, this control is disabled.
 2. Select the exact title/subtitle in **템플릿의 문구**. Selection is explicit even if
    multiple parameters have identical names. Only uniform, non-animated text is offered;
    mixed styling is excluded because Adobe's `setText` collapses multiple style runs.
-3. Enter the new text. Leave font fields blank to retain their current values. Author-
+3. Inspect the current text and font metadata. Text/font inputs and **선택한 문구에 적용**
+   remain disabled by `MOGRT_TEXT_WRITE_VERIFIED = false`, independently of API presence.
+
+The following describes the experimental path for future isolated host verification,
+not an available production workflow. Do not enable the release gate solely because
+the constructor exists or a transaction returns true:
+
+1. Enter the new text. Leave font fields blank to retain their current values. Author-
    locked font fields stay disabled. Font names and sizes use the host/template's own
    values; they are not a verified mapping from the engine's pixel measurements.
-4. Choose **선택한 문구에 적용**. A single undoable transaction applies the selected
+2. Choose **선택한 문구에 적용**. A single transaction attempts the selected
    parameter, and all exposed text/font values are read back. The result is appended to
    `textEdits`. Read parameters again before another edit; a `needs-review` result
    disables further text edits on this preview, requiring manual host review.
-5. Check the picture, line breaks, font availability and editability in Premiere's own
+3. Check the picture, line breaks, font availability and editability in Premiere's own
    Properties panel. A successful value readback alone does not prove visual fidelity.
 
 For engine caption text, save and load this JSON through the same plan picker:
@@ -124,9 +133,11 @@ verify that its old inspection cannot edit the replacement. The adapter requires
 live object references: if the SDK returns fresh wrappers, it blocks with
 `TEXT_TARGET_IDENTITY_CHANGED`. Establish this identity behavior on the exact host build;
 do not substitute project-asset identity for clip-instance identity. Keep any uncertain
-write for review rather than retrying it. These text checks have **not** been completed
-on the installed Premiere Beta 27.1.0.7. Panel loading, constructor detection and the
-native draft picker were observed; no successful text write is claimed.
+write for review rather than retrying it. The 27.1.0.7 run reached native plan selection,
+preview, typed AE inspection and failed text write/readback. Korean and ASCII probes
+both failed. Two manual Undo checks restored original title/font/size; the last ASCII
+probe still needs Undo after Mac unlock. Font writes, edited appearance, persistence
+and the remaining negative host checks have not passed. No successful text write is claimed.
 
 API evidence: [Adobe's MogrtText/ComponentParam declarations](https://github.com/adobe/premierepro-types/blob/c8f108941197c1d987f08b9916c0d18a2e252699/src/premierepro.d.ts),
 [version boundary and implementation notes](../../docs/graphics-caption-rendering.md).

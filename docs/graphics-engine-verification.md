@@ -1,7 +1,8 @@
 # Graphics Engine verification — 2026-10-03
 
-This is a chronological record. Latest status: Premiere Beta **27.1.0** is installed
-and the text-capable panel loads; **text writes and readback remain unverified**.
+This is a chronological record. Latest status: Premiere Beta **27.1.0.7** reads AE
+template text, but **text writes fail readback with an unsupported encoding error**.
+Panel writes are disabled; original preview and typed text inspection remain available.
 The editable text step has automated coverage. The preceding original
 preview panel passed the [Premiere 26.5.2 replay](#final-production-panel-replay--2026-10-08).
 Earlier unrun/blocked statements describe the state at those earlier checkpoints.
@@ -300,3 +301,51 @@ transactions and readback, edited appearance and undo remain **pending**. Shared
 development-tool UI use by other tasks interrupted the next inspection step; the
 verification session stopped UI actions while coordination was requested. No 27.x
 text-write success is claimed. Production source was unchanged during installation.
+
+## Beta text verification and write gate — 2026-10-08
+
+After coordinating Adobe UI use with Sync, the beta panel was tested in its disposable
+project. These are observed results on **27.1.0.7**, not a claim about all 27.x builds.
+The [normalized observation record](evidence/2026-10-08-graphics-beta-text.json) is a
+manual transcription of panel receipts and the own-plugin developer console, not an
+exported raw receipt. Template file versions remain `bundled-unverified`.
+
+- **Basic Lower Third:** preview timing read back as frames 60–150 at 30000/1001,
+  1920×1080. `getProjectItem()` returned null, which initially crashed the inspector.
+  The adapter now accepts null while retaining clip/component/parameter reference
+  checks and detecting project-item presence changes. Five regressions failed before
+  the fix and passed afterwards. Rebuilt code returned `no-editable-text`: both source
+  text values were null. Repeated live wrappers were stable in this observed sequence.
+- **Gaming Lower Third Left (AE):** original preview passed at frames 60–90. Inspection
+  returned two uniform text targets in `AE.ADBE Capsule`: title `READY PLAYER 1?`
+  (Sarina-Regular, 28) and subtitle `Ready Set, Play!` (VoxRound-Semibold, 36). The title
+  allowed font-name edits and locked font size; the panel reflected those restrictions.
+- Applying Korean/newline/emoji text through the production handler returned
+  `needs-review`, `TEXT_HOST_ERROR`, with no `after`. Direct SDK readback then threw
+  `MogrtText is encoded in a format that is not supported by this version of the API.`
+  Further panel edits were disabled. One manual Undo restored the original title,
+  font name and size, verified by SDK readback.
+- In another disposable preview, mutating the host-returned text value alone left the
+  host unchanged. Passing that value through the documented keyframe/transaction path
+  returned true but caused the same readback error. Undo restored title/font/size.
+  Repeating with ASCII-only `PEA text probe` returned true and the same error, so the
+  observed failure is not limited to Korean, emoji, or the detached constructor path.
+  The Mac locked before the final ASCII diagnostic could be undone. **That last Undo
+  and recovery readback remain pending**; no automatic project save was performed.
+
+`MOGRT_TEXT_WRITE_VERIFIED` is now false. Both panel controls and the apply handler
+reject writes while leaving inspection and original preview available. The low-level
+experimental function remains for isolated compatibility investigation. Constructor
+availability alone cannot reopen the production gate. Reopening it requires a verified
+write/readback/Undo path plus the remaining visual and font checks below.
+
+No successful text/font write, edited visual fidelity, save/reopen persistence, or
+full caption layout is claimed. Host replacement/stale-binding negative cases remain
+automated simulations. The null fix was replayed in the beta; the new release gate has
+automated panel coverage, but its final native UI replay awaits Mac unlock.
+
+Final local checks: **182 tests / 22 files passed**. Core, Graphics and Premiere adapter
+typechecks, structural assignment against the inspected Adobe declarations, panel build,
+source/built-module syntax and `git diff --check` all passed. No new dependencies were
+installed. The six added tests cover nullable project-item binding and production
+write blocking, including direct invocation of a disabled button's event handler.

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "manually-transcribed-host-observations",
+  "date": "2026-10-08",
+  "host": {"name": "Adobe Premiere Pro (Beta)", "version": "27.1.0", "build": "27.1.0.7"},
+  "source": "Own beta panel receipts and visible UXP developer console SDK reads in a disposable project",
+  "codeUnderTest": "cec7c65 plus the nullable project-item fix replayed from rebuilt uxp-mogrt-text.js",
+  "templateVersions": "bundled-unverified",
+  "graphicsApplied": false,
+  "observations": [
+    {
+      "template": "Basic Lower Third.mogrt",
+      "preview": {"status": "preview-created", "startTicks": "508540032000", "endTicks": "1271350080000", "frameTicks": "8475667200", "width": 1920, "height": 1080},
+      "projectItem": null,
+      "sourceTextValues": [null, null],
+      "inspectionAfterFix": "no-editable-text",
+      "repeatedLiveWrappers": "same item, component and parameter references observed"
+    },
+    {
+      "template": "Gaming Lower Third Left.mogrt",
+      "preview": {"status": "preview-created", "startTicks": "508540032000", "endTicks": "762810048000", "frameTicks": "8475667200", "width": 1920, "height": 1080},
+      "inspectionStatus": "ready",
+      "componentMatchName": "AE.ADBE Capsule",
+      "targets": [
+        {"parameterIndex": 1, "name": "제목", "text": "READY PLAYER 1?", "fontName": "Sarina-Regular", "fontSize": 28, "allCaps": false, "fauxBold": false, "fauxItalic": false, "smallCaps": false, "fontNameEditable": true, "fontSizeEditable": false},
+        {"parameterIndex": 2, "name": "자막", "text": "Ready Set, Play!", "fontName": "VoxRound-Semibold", "fontSize": 36}
+      ],
+      "panelWrite": {"requestedText": "안녕하세요 👋\n편집 가능한 자막", "status": "needs-review", "code": "TEXT_HOST_ERROR", "afterAvailable": false, "furtherPanelEditsDisabled": true},
+      "manualUndo": {"performed": true, "readback": {"text": "READY PLAYER 1?", "fontName": "Sarina-Regular", "fontSize": 28}}
+    }
+  ],
+  "isolatedDiagnostics": {
+    "template": "Gaming Lower Third Left.mogrt",
+    "sequenceLabel": "host-value-probe",
+    "mutatingReturnedTextAlone": "host text remained unchanged",
+    "hostReturnedValueKoreanWrite": {"transactionReturned": true, "readback": "unsupported-encoding-error", "undoReadback": {"text": "READY PLAYER 1?", "fontName": "Sarina-Regular", "fontSize": 28}},
+    "hostReturnedValueAsciiWrite": {"requestedText": "PEA text probe", "transactionReturned": true, "readback": "unsupported-encoding-error", "undo": "pending-mac-unlock"}
+  },
+  "hostReadbackError": "MogrtText is encoded in a format that is not supported by this version of the API.",
+  "productionWriteGate": false,
+  "gateVerification": "automated panel tests; native replay pending Mac unlock",
+  "projectAutoSaved": false,
+  "unverified": ["successful text write", "font writes", "edited visual fidelity", "save/reopen persistence", "full caption layout", "final ASCII diagnostic recovery"]
+}

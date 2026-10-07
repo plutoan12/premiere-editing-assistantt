@@ -1,5 +1,9 @@
 import { validateMogrtPreviewRequest, type MogrtPreviewReceipt } from "./uxp-mogrt.js";
 
+/** Release gate, not API detection. 27.1.0.7 reads AE text but writes fail
+ * readback with an unsupported MogrtText encoding. See the host evidence record. */
+export const MOGRT_TEXT_WRITE_VERIFIED = false;
+
 /** Structural subset of Adobe's 27.0 beta API. No SDK or Node runtime dependency. */
 interface TextValue {
   getText(): string; getFontName(): string; getFontSize(): number;
@@ -17,7 +21,7 @@ interface Component { getMatchName(): Promise<string>; getParamCount(): number; 
 interface Chain { getComponentCount(): number; getComponentAtIndex(index: number): Component }
 interface Item {
   getName(): Promise<string>; getStartTime(): Promise<{ticks:string}>; getEndTime(): Promise<{ticks:string}>;
-  getProjectItem(): Promise<{getId():string}>;
+  getProjectItem(): Promise<{getId():string}|null>;
   getComponentChain(): Promise<Chain>;
 }
 interface Sequence {
@@ -55,7 +59,7 @@ export interface MogrtTextEditReceipt {
   graphicsApplied:false; unapplied:readonly string[]; code?:string;
 }
 interface Session {
-  api:PremiereMogrtTextApi; preview:MogrtPreviewReceipt & {sequenceId:string}; assetId:string;
+  api:PremiereMogrtTextApi; preview:MogrtPreviewReceipt & {sequenceId:string}; assetId:string|null;
   item:Item; bindings:{component:Component;param:Param}[]; targets:MogrtTextTarget[]; consumed:boolean;
 }
 const sessions=new WeakMap<MogrtTextInspection,Session>();
@@ -97,7 +101,7 @@ function snapshot(text:TextValue):MogrtTextSnapshot {
 function same(a:MogrtTextSnapshot,b:MogrtTextSnapshot):boolean {
   return (Object.keys(a) as (keyof MogrtTextSnapshot)[]).every(k=>a[k]===b[k]);
 }
-async function locate(api:PremiereMogrtTextApi,preview:MogrtPreviewReceipt & {sequenceId:string},assetId?:string) {
+async function locate(api:PremiereMogrtTextApi,preview:MogrtPreviewReceipt & {sequenceId:string},assetId?:string|null) {
   const project=await api.Project.getActiveProject();
   if(!project||project.guid.toString()!==preview.projectId)fail("PROJECT_CHANGED");
   const sequence=(await project.getSequences()).find(s=>s.guid.toString()===preview.sequenceId);
@@ -107,7 +111,9 @@ async function locate(api:PremiereMogrtTextApi,preview:MogrtPreviewReceipt & {se
   const item=items[0],expected=preview.items[0];
   if(await item.getName()!==expected.name||(await item.getStartTime()).ticks!==expected.startTicks
     ||(await item.getEndTime()).ticks!==expected.endTicks)fail("PREVIEW_ITEM_CHANGED");
-  const id=(await item.getProjectItem()).getId();
+  // Native graphics can have no project media item (observed on 27.1.0.7).
+  // Null is part of the binding; live clip/component/parameter identity remains required.
+  const projectItem=await item.getProjectItem(),id=projectItem===null?null:projectItem.getId();
   if(assetId!==undefined&&id!==assetId)fail("PREVIEW_ITEM_CHANGED");
   return {project,item,assetId:id,chain:await item.getComponentChain()};
 }
@@ -155,7 +161,8 @@ async function resolveParam(chain:Chain,target:MogrtTextTarget,binding:Session["
   if(param.isTimeVarying())fail("TIME_VARYING_TEXT");
   return param;
 }
-/** A single uniform text parameter edit, not full caption layout application.
+/** Experimental host-verification primitive; production UI writes are gated by
+ * MOGRT_TEXT_WRITE_VERIFIED. A single parameter edit, not full caption layout application.
  * No automatic retry/rollback: after starting a transaction, consume the inspection
  * even if the host throws or returns false. Read again before another user edit. */
 export async function applyPremiereMogrtText(api:PremiereMogrtTextApi,inspection:MogrtTextInspection,targetIndex:number,input:unknown):Promise<MogrtTextEditReceipt> {
