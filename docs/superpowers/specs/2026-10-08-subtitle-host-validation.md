@@ -30,8 +30,10 @@ An initial file-picker operation selected the dependency directory instead of on
 
 ## Pending actual caption acceptance
 
-With the user's approval, all open test projects were saved, Premiere was quit and relaunched normally, and the dedicated Subtitle test project was reopened. **Window → Extensions** now lists **Subtitle · 캡션 적용**. The Mac then became locked, preventing further UI inspection; the user has been asked to unlock it. No unsigned-extension setting was enabled.
+With the user's approval, all open test projects were saved, Premiere was quit and relaunched normally, and the dedicated Subtitle test project was reopened. **Window → Extensions** lists **Subtitle · 캡션 적용**. The Mac has been unlocked. In the normal Premiere Pro 26.5.2 installation, a screenshot confirmed that the CEP panel body renders the file selector, target section, disabled **새 캡션 트랙 적용** button and **적용 범위** details control. No unsigned-extension setting was enabled.
 
-Caption panel loading, the native `createCaptionTrack` call, visible cue text/times, playback, and persistence after reopening are **not yet verified**. The Subtitle UXP review panel's real host load also remains unverified. Installation and automated tests do not establish either result.
+CUA coordinate clicks and Tab/Return did not activate either the file selector or the browser's native details control. An automated input-delivery problem is suspected, but the cause has not been established. The user has been asked to activate the Premiere window and click the file selector once directly.
 
-After the Mac is unlocked, open **Window → Extensions → Subtitle · 캡션 적용**, confirm the panel body loads, choose the actual-model sequence JSON, verify the displayed test project and `ko-yuna-premiere` sequence, and apply once. Check the new caption track and both cue times, save and reopen the test project, and verify no duplicate track can be created by reopening the same document. Record the result here before calling the host acceptance complete.
+No caption-application request has been sent. The native `createCaptionTrack` call, visible cue text/times, playback, and persistence after reopening are **not yet verified**; `nativeCaptionApplicationVerified` remains `false`. The Subtitle UXP review panel's real host load also remains unverified. The rendered CEP panel body does not establish these results.
+
+After file selection is available, choose the actual-model sequence JSON, verify the displayed test project and `ko-yuna-premiere` sequence, and apply once. Check the new caption track and both cue times, save and reopen the test project, and verify no duplicate track can be created by reopening the same document. Record the result here before calling the host acceptance complete.
