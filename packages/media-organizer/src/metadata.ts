@@ -1,0 +1,11 @@
+import {z} from 'zod';
+import {ProvenanceSchema} from '@pea/core';
+export const CatalogTargetSchema=z.object({kind:z.enum(['asset','clip']),id:z.string().min(1)}).strict();
+export type CatalogTarget=z.infer<typeof CatalogTargetSchema>;
+export const MetadataFieldSchema=z.enum(['captureDate','deviceId','scene','take','mediaKind']);
+export type MetadataField=z.infer<typeof MetadataFieldSchema>;
+export const MetadataCandidateSchema=z.object({field:MetadataFieldSchema,value:z.string(),source:z.enum(['probe','host','folderRule','filenameRule']),provenance:ProvenanceSchema,rawValue:z.string().optional(),timezone:z.string().optional()}).strict();
+export type MetadataCandidate=z.infer<typeof MetadataCandidateSchema>;
+export const MetadataRecordSchema=z.object({target:CatalogTargetSchema,field:MetadataFieldSchema,candidates:z.array(MetadataCandidateSchema),override:z.object({value:z.string(),locked:z.literal(true)}).strict().optional()}).strict();
+export type MetadataRecord=z.infer<typeof MetadataRecordSchema>;
+export const targetKey=(target:CatalogTarget)=>`${target.kind}:${target.id}`;

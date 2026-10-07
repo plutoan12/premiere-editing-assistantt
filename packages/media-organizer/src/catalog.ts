@@ -1,9 +1,12 @@
 import {z} from 'zod';
 import {MediaAssetSchema,ClipReferenceSchema,MediaTimeSchema,ArtifactSchema,MediaDocumentSchema,validateBoundedTimeRange} from '@pea/core';
+import {ScanRecordSchema,IngestResultSchema,ProbeRecordSchema} from './scan.js';
+import {MetadataRecordSchema,targetKey} from './metadata.js';
 export type IdFactory = () => string;
 export const AssetRecordSchema=z.object({
   asset:MediaAssetSchema,fileRevision:z.number().int().positive(),locations:z.array(z.string().min(1)).min(1),
   duration:MediaTimeSchema.optional(),availability:z.enum(['online','offline','unknown']),
+  probe:ProbeRecordSchema.optional(),
   analysis:z.object({artifact:ArtifactSchema,providerVersion:z.string().min(1),settingsKey:z.string().min(1)}).strict().optional(),
 }).strict();
 export type AssetRecord=z.infer<typeof AssetRecordSchema>;
@@ -12,6 +15,8 @@ export type HostBinding=z.infer<typeof HostBindingSchema>;
 export const CatalogSchema=z.object({
   schemaVersion:z.literal('1.0.0'),catalogId:z.uuid(),revision:z.number().int().nonnegative(),
   assets:z.array(AssetRecordSchema),clips:z.array(ClipReferenceSchema),bindings:z.array(HostBindingSchema),
+  scans:z.array(ScanRecordSchema),jobs:z.array(IngestResultSchema),metadata:z.array(MetadataRecordSchema),
+  clipStates:z.array(z.object({clipId:z.string().min(1),fileRevision:z.number().int().positive(),reviewState:z.enum(["confirmed","needs_review"])}).strict()),
 }).strict();
 export type CatalogState=z.infer<typeof CatalogSchema>;
 export interface CatalogStore {
@@ -33,11 +38,31 @@ export function validateCatalog(input:CatalogState):CatalogState {
   }
   for(const clip of state.clips) {
     const record=state.assets.find(x=>x.asset.id===clip.mediaAssetId)!;
-    if(record.duration) validateBoundedTimeRange(clip.sourceRange,record.duration);
+    const cs=state.clipStates.find(x=>x.clipId===clip.id);
+    if(cs && cs.fileRevision!==record.fileRevision && cs.reviewState!=="needs_review") throw new Error("stale clip must require review");
+    if(record.duration && (!cs || cs.fileRevision===record.fileRevision)) validateBoundedTimeRange(clip.sourceRange,record.duration);
   }
   for(const binding of state.bindings) if(!state.clips.some(x=>x.id===binding.clipId)) throw new Error('binding references missing clip');
+  unique(state.scans.map(x=>x.scanId),'scan ID');
+  unique(state.jobs.map(x=>x.job.id),'job ID');
+  unique(state.clipStates.map(x=>x.clipId),'clip state');
+  unique(state.metadata.map(x=>`${targetKey(x.target)}:${x.field}`),'metadata field');
+  for(const cs of state.clipStates) if(!state.clips.some(x=>x.id===cs.clipId)) throw new Error('clip state references missing clip');
+  for(const row of state.metadata) {
+    if(!hasTarget(state,row.target)) throw new Error('metadata references missing target');
+    if(row.candidates.some(x=>x.field!==row.field)) throw new Error('metadata candidate field mismatch');
+  }
+  for(const scan of state.scans) {
+    if(scan.result?.scanId && scan.result.scanId!==scan.scanId) throw new Error('scan result identity mismatch');
+    if(scan.result?.assetId && !state.assets.some(x=>x.asset.id===scan.result?.assetId)) throw new Error('scan references missing asset');
+    if(scan.result?.clipId && !state.clips.some(x=>x.id===scan.result?.clipId)) throw new Error('scan references missing clip');
+  }
   return state;
 }
 export function emptyCatalog(catalogId:string):CatalogState {
-  return validateCatalog({schemaVersion:'1.0.0',catalogId,revision:0,assets:[],clips:[],bindings:[]});
+  return validateCatalog({schemaVersion:'1.0.0',catalogId,revision:0,assets:[],clips:[],bindings:[],scans:[],jobs:[],metadata:[],clipStates:[]});
+}
+
+export function hasTarget(state:CatalogState,target:{kind:'asset'|'clip';id:string}):boolean {
+  return target.kind==='asset'?state.assets.some(x=>x.asset.id===target.id):state.clips.some(x=>x.id===target.id);
 }
