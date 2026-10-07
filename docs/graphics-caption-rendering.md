@@ -22,17 +22,52 @@ These findings establish the documented API version gap. They are not a claim th
 every possible legacy or alternate Premiere integration is impossible. No 27.x host
 test, upgrade, dependency installation or new caption write was performed here.
 
-## Implementation choice awaiting user preference
+## Selected route: editable MOGRT text
+
+The user selected **route 2** on 2026-10-08. The panel now includes a capability-gated,
+uniform text/font editing path. It keeps the result editable in the MOGRT instead of
+rasterizing it. The installed 26.5.2 host cannot verify this newer API; 27.x host
+readback and visual verification are still pending.
 
 | Route | User-visible result | Work still required |
 | --- | --- | --- |
 | Transparent caption graphics on 26.5.2 | Text/style/placement rendered into a separate image clip; text changes regenerate the asset | Real font measurement and rasterization, alpha output, import/timing verification; explicitly identify the asset as a rendered caption |
 | Editable MOGRT text | Keep text and supported font controls editable inside the template | A host exposing the newer API, template-specific bindings and editability checks, full readback/visual tests; separate handling for unsupported style/emphasis/placement |
 
-No route has been silently selected. Image rendering changes the editing workflow;
-installing/upgrading Premiere is also outside the current implementation action.
+Installing/upgrading Premiere is outside this code change.
 The panel must not claim full-plan support merely because a newer text constructor
 exists. Core and the pure GraphicsPlan contracts remain unchanged.
+
+### Implemented boundary
+
+- Inspect the exact single-item sequence from a successful preview receipt and offer
+  only typed, uniform, non-time-varying text parameters. Binding uses component index,
+  match name and parameter index/name; duplicate translated names are not guessed.
+- Keep live inspection state in memory. Before editing, recheck project, sequence,
+  asset identity, clip range, component binding and original text/font state. Retain
+  the actual clip/component/parameter objects and require the same live references:
+  an asset ID alone cannot distinguish a replacement timeline occurrence. Hosts that
+  return fresh wrappers are blocked with `TEXT_TARGET_IDENTITY_CHANGED`; stable wrapper
+  identity is an explicit pending 27.x compatibility requirement, never presumed from
+  matching names, times or values.
+- Check template-author font restrictions on the original value. Construct a detached
+  text value, preserving all seven exposed text/font fields, then commit one locked
+  transaction and compare every field after reading it back from the host.
+- Once a transaction is attempted, the inspection is consumed. Uncertain writes return
+  `needs-review`; the panel disables further edits for that preview. It never retries or
+  claims automatic rollback. There is no automatic project save.
+- A GraphicsPlan can produce an `editable-text-draft` with exact preview identity/timing
+  and caption text. The user selects the live target. Font names/sizes remain explicit;
+  engine output pixels are not treated as proven template font units.
+- `text-updated` is only a value-readback result. All receipts retain
+  `graphicsApplied:false`: layout, color, outline, shadow, emphasis, placement and other
+  template properties still require separate work. Existing font flags are preserved;
+  mixed text runs are rejected to avoid `setText` flattening them.
+
+Conflict detection is optimistic because SDK getters are asynchronous. It is not an
+atomic compare-and-swap guarantee against simultaneous manual/other-plugin edits.
+Host object semantics, author restrictions, font substitutions, native UI and visual
+appearance require the 27.x smoke procedure in the panel README before release use.
 
 ## Primary evidence
 

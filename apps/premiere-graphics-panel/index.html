@@ -1,15 +1,27 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><style>
-body{padding:16px;color:#eee;background:#252525;font-size:14px}h1{font-size:20px}p{line-height:1.5}button{margin:4px 0;min-height:32px}textarea{width:100%;height:210px;margin-top:12px}#status{color:#c8e0ff}
+body{padding:16px;color:#eee;background:#252525;font-size:14px;overflow:auto}h1{font-size:20px}p{line-height:1.5}button{margin:4px 0;min-height:32px}textarea{width:100%;height:210px;margin-top:12px}#status{color:#c8e0ff}label{display:block;margin-top:8px}#caption-text{height:80px}select,input{width:100%;min-height:28px}
 </style></head><body>
 <h1>그래픽 미리보기</h1>
 <p>선택한 MOGRT를 새 시퀀스에 넣어 모양과 길이를 확인합니다. 템플릿의 원래 문구와 스타일이 표시됩니다.</p>
-<p>계획의 자막 문구·스타일·강조·배치·속성은 아직 적용되지 않습니다.</p>
+<p>문구와 폰트는 아래에서 별도로 편집할 수 있습니다. 계획의 전체 스타일·강조·배치·다른 속성은 아직 적용되지 않습니다.</p>
 <button id="template">MOGRT 선택</button>
-<button id="request">미리보기 계획 불러오기</button>
+<button id="request">미리보기 / 자막 계획 불러오기</button>
 <p id="summary">기본 미리보기: 1920×1080, 29.97fps, 2.002초부터 1.001초</p>
 <button id="preview" disabled>새 시퀀스에서 미리보기</button>
 <button id="inspect" disabled>템플릿 속성 확인</button>
+<h2>편집 가능한 자막</h2>
+<p id="text-help"></p>
+<button id="inspect-text" disabled>편집할 문구 확인</button>
+<label for="text-target">템플릿의 문구</label>
+<select id="text-target" disabled></select>
+<label for="caption-text">적용할 문구</label>
+<textarea id="caption-text" disabled></textarea>
+<p id="current-font"></p>
+<label for="font-name">폰트 이름 (빈칸이면 유지)</label><input id="font-name" type="text" disabled>
+<label for="font-size">폰트 크기 (템플릿 단위, 빈칸이면 유지)</label><input id="font-size" type="text" disabled>
+<p>혼합 스타일과 애니메이션 문구는 제외합니다. 색상·테두리·그림자·강조·배치와 화면 모양은 별도 확인이 필요합니다.</p>
+<button id="apply-text" disabled>선택한 문구에 적용</button>
 <button id="export" disabled>결과 저장</button>
 <p id="status">템플릿을 선택하세요.</p>
 <textarea id="result" readonly aria-label="미리보기 결과"></textarea>

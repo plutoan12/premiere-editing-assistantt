@@ -1,4 +1,5 @@
 import { PREMIERE_TICKS_PER_SECOND, validateMogrtPreviewRequest } from "./uxp-mogrt.js";
+import { validateMogrtTextDraft } from "./uxp-mogrt-text.js";
 import { z } from "zod";
 import { compareIds, GraphicsError, IdSchema, validateGraphicsPlan, type PropertyValue } from "@pea/graphics";
 
@@ -83,4 +84,13 @@ export function createMogrtPreviewRequest(input: unknown, decisionId: string, in
     frameTicks:ticks({ticks:1n,timebase:{numerator:plan.frameRate.rate.denominator,denominator:plan.frameRate.rate.numerator}}),
     canvas:{width:plan.canvas.width,height:plan.canvas.height},
   });
+}
+
+/** Text-only draft for explicit live parameter selection. Engine font sizes are
+ * output pixels, not a verified mapping to a template's font units. Layout and
+ * emphasis are deliberately not declared applied by this converter. */
+export function createMogrtTextDraft(input:unknown,decisionId:string,inputBinding:unknown) {
+  const plan=validateGraphicsPlan(input),preview=createMogrtPreviewRequest(plan,decisionId,inputBinding);
+  const graphic=plan.graphics.find(g=>g.decision.id===decisionId)!;
+  return validateMogrtTextDraft({schemaVersion:"1.0.0",mode:"editable-text-draft",preview,edit:{text:graphic.caption.text}});
 }

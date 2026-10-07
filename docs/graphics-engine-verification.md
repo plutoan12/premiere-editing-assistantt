@@ -1,7 +1,8 @@
 # Graphics Engine verification — 2026-10-03
 
-This is a chronological record. Latest status: the final production panel passed the
-[Premiere 26.5.2 host replay on 2026-10-08](#final-production-panel-replay--2026-10-08).
+This is a chronological record. Latest status: an editable text step is implemented
+with automated coverage; **27.x host verification is pending**. The preceding original
+preview panel passed the [Premiere 26.5.2 replay](#final-production-panel-replay--2026-10-08).
 Earlier unrun/blocked statements describe the state at those earlier checkpoints.
 
 ## Delivered
@@ -221,3 +222,50 @@ the real host; its engine conversion/validation is covered by automated tests. H
 negative cases remain simulated tests. Planned caption text, typography, emphasis,
 placement and template-property edits still require a tested renderer and are not
 implemented by this preview. Drop-frame display labels and pixel fidelity were not tested.
+
+## Editable MOGRT text follow-up — 2026-10-08
+
+The user selected editable MOGRTs. The new adapter/panel step inspects and edits one
+uniform, non-animated typed text parameter. It preserves exposed font flags, enforces
+author restrictions, detects stale bindings and verifies text/font readback after a
+locked transaction. A `text-updated` receipt remains `graphicsApplied:false` because
+full layout/style/emphasis/placement is not implemented. The draft converter carries
+the plan's caption text and exact preview timing without inferring template font units.
+
+Evidence gathered during implementation:
+
+- New boundary tests failed before the functions existed, then passed after implementation.
+  Panel event/state tests failed before controls were connected, then passed.
+- Structural assignment of the adapter API to Adobe's actual declarations at
+  `c8f108941197c1d987f08b9916c0d18a2e252699` initially exposed an incorrect project-item
+  identity assumption. Correcting it to `ProjectItem.getId()` made the assignment pass.
+  The corrected fixture failed against the old code and passed after correction.
+  The SDK declaration/check files are local ignored verification files, not a dependency.
+- Review identified indistinguishable labels for same-component text parameters and
+  replacement clips sharing asset/name/range/text. Regression tests reproduced both.
+  Unique visible text ordinals and retained live clip/component/parameter references
+  address them; fresh/changed wrappers are rejected rather than guessed equivalent.
+- Stable wrapper identity on 27.x is still unverified. The implementation intentionally
+  blocks if the host cannot establish this condition. Asynchronous getters also mean
+  conflict detection is optimistic, not an atomic compare-and-swap guarantee.
+
+No 27.x text write, native control replay, visual fidelity or undo test has been run.
+Only Premiere 26.5.2 is installed. No application installation, upgrade, SDK package
+installation or shared Premiere UI interaction was performed in this follow-up.
+The required next host procedure is in
+[the panel README](../apps/premiere-graphics-panel/README.md#required-27x-smoke-checks).
+
+Final local checks for this follow-up:
+
+| Check | Result |
+| --- | --- |
+| `node node_modules/vitest/vitest.mjs run` | Exit 0; 176 tests / 22 files |
+| TypeScript `--noEmit` for Core, Graphics and Premiere adapter | Exit 0 for all three |
+| Structural API assignment against the inspected official Adobe declarations | Exit 0 after `getId()` correction |
+| Panel build; source and built-module syntax checks; `git diff --check` | Exit 0 |
+| Panel suite invoked from its own package directory | Passed; package now has a CI test script |
+| Read-only review after fixes | No Critical/Important findings; independently verified replacement rejection and uncertain readback handling |
+
+The review's remaining documentation note about wrapper stability was addressed in
+the README and compatibility notes. These automated results do not upgrade the old
+26.5.2 preview evidence into a 27.x text-write claim.

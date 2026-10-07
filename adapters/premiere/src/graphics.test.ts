@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { planGraphics } from "@pea/graphics";
 import { compilePremiereGraphicsPlan, createMogrtPreviewRequest } from "./index.js";
+import * as adapter from "./index.js";
 
 const fps = { rate: { numerator: 30000, denominator: 1001 }, dropFrame: true };
 const time = (ticks: bigint) => ({ ticks, timebase: { numerator: 1001, denominator: 30000 } });
@@ -65,6 +66,14 @@ describe("Premiere graphics plan compiler", () => {
 
 
 describe("graphics plan to Premiere preview", () => {
+  it("carries editable caption text with exact template identity without assuming font units or layout support", () => {
+    const draft=adapter.createMogrtTextDraft(createPlan(),"a",context().bindings[0]);
+    expect(draft).toMatchObject({schemaVersion:"1.0.0",mode:"editable-text-draft",edit:{text:"안녕"},
+      preview:{decisionId:"a",templateId:"title",templateVersion:"1",startTicks:"508540032000"}});
+    expect(draft.edit).not.toHaveProperty("fontSize");
+    expect(draft.edit).not.toHaveProperty("fontName");
+    expect(()=>adapter.createMogrtTextDraft(createPlan(),"a",{...context().bindings[0],templateVersion:"other"})).toThrow(/BINDING/);
+  });
   it("converts planned NTSC timing exactly and labels unapplied graphics as a preview", () => {
     const result = createMogrtPreviewRequest(createPlan(), "a", context().bindings[0]);
     expect(result).toMatchObject({mode:"template-preview",startTicks:"508540032000",durationTicks:"254270016000",frameTicks:"8475667200",canvas:{width:1920,height:1080}});

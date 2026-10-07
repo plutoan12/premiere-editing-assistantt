@@ -5,16 +5,20 @@ create a new sequence, configure its frame size/rate, insert a chosen MOGRT, tri
 end, and read the actual start/end ticks back. Existing sequence contents are not used
 as the insertion target. The panel does not save the project automatically.
 
-Caption text, styling, emphasis, planned placement and template-property overrides are
-**not applied**. Every receipt has `graphicsApplied: false` and lists these omissions.
+The original preview does not apply caption text, styling, emphasis, planned placement
+or template-property overrides. A separate **editable text** step is implemented for
+hosts exposing `MogrtText` (documented in the 27.0 beta API). Every receipt still has
+`graphicsApplied: false`; text editing is not full-plan rendering.
 The panel must not be described as the full GraphicsPlan renderer. On local Premiere
 26.5.2, Basic Lower Third exposed two text components after loading, but their source-text
 values were unavailable to this inspector. An AE Gaming Lower Third also exposed
 unavailable title/subtitle values after its Capsule component finished loading.
 
-The final panel was verified in Premiere 26.5.2 with both templates: sequence settings,
+The original preview panel at `ede9a2e` was verified in Premiere 26.5.2 with both templates: sequence settings,
 insertion, exact start/end readback, property inspection and visible original graphics.
 Receipt export was also verified. See the [host verification record](../../docs/graphics-engine-verification.md#final-production-panel-replay--2026-10-08).
+The added text controls have automated tests only; neither their native UI nor text
+writes have been verified on a 27.x host yet.
 
 ## Build and load
 
@@ -74,6 +78,53 @@ frame timing is preserved and checked against the created sequence's timebase.
 - [SequenceSettings](https://developer.adobe.com/premiere-pro/uxp/ppro-reference/classes/sequencesettings)
 - [Project transactions](https://developer.adobe.com/premiere-pro/uxp/ppro-reference/classes/project)
 
-Full text/layout rendering still requires a tested template-specific renderer and a
-supported text API. The existing `compilePremiereGraphicsPlan` capability gate remains
-unchanged; this preview panel does not declare `captionLayout` or `emphasis` support.
+## Editable text (27.0 beta API; host verification pending)
+
+1. Make a preview in a disposable project. Choose **편집할 문구 확인** after the
+   template finishes loading. On hosts without `MogrtText`, this control is disabled.
+2. Select the exact title/subtitle in **템플릿의 문구**. Selection is explicit even if
+   multiple parameters have identical names. Only uniform, non-animated text is offered;
+   mixed styling is excluded because Adobe's `setText` collapses multiple style runs.
+3. Enter the new text. Leave font fields blank to retain their current values. Author-
+   locked font fields stay disabled. Font names and sizes use the host/template's own
+   values; they are not a verified mapping from the engine's pixel measurements.
+4. Choose **선택한 문구에 적용**. A single undoable transaction applies the selected
+   parameter, and all exposed text/font values are read back. The result is appended to
+   `textEdits`. Read parameters again before another edit; a `needs-review` result
+   disables further text edits on this preview, requiring manual host review.
+5. Check the picture, line breaks, font availability and editability in Premiere's own
+   Properties panel. A successful value readback alone does not prove visual fidelity.
+
+For engine caption text, save and load this JSON through the same plan picker:
+
+```ts
+import { createMogrtTextDraft } from '@pea/premiere-adapter';
+const draft = createMogrtTextDraft(plan, 'caption-a', exactVersionBinding);
+// JSON.stringify(draft), load it, choose the matching template, make a preview,
+// inspect text and explicitly select its live parameter before applying.
+```
+
+The converter carries original caption text, not measured line breaks or font styling.
+It does not infer a template's caption binding or font units. Color, outline, shadow,
+emphasis and placement are not applied. The `compilePremiereGraphicsPlan` capability
+gate remains unchanged: the panel does not declare `captionLayout` or `emphasis` support.
+
+### Required 27.x smoke checks
+
+Record the exact Premiere build, template/version and exported receipt. Repeat for a
+Premiere-authored and AE-authored template that expose typed text. Verify Korean,
+multiline and emoji text; text-only edits preserve font fields; unlocked font edits
+read back; and the result remains editable in Premiere. Visually check font substitution,
+glyph coverage, wrapping and timing. Check undo once and inspect again before another
+edit. For locked fonts, mixed styling and time-varying text, verify the operation is
+unavailable. Manually change the original text after inspection and verify stale edits
+are blocked. Replace a clip/component/parameter with an identical-looking instance and
+verify that its old inspection cannot edit the replacement. The adapter requires stable
+live object references: if the SDK returns fresh wrappers, it blocks with
+`TEXT_TARGET_IDENTITY_CHANGED`. Establish this identity behavior on the exact host build;
+do not substitute project-asset identity for clip-instance identity. Keep any uncertain
+write for review rather than retrying it. These checks
+have **not** been run on 27.x on this machine, which currently has only 26.5.2.
+
+API evidence: [Adobe's MogrtText/ComponentParam declarations](https://github.com/adobe/premierepro-types/blob/c8f108941197c1d987f08b9916c0d18a2e252699/src/premierepro.d.ts),
+[version boundary and implementation notes](../../docs/graphics-caption-rendering.md).
