@@ -1,7 +1,8 @@
 # Graphics Engine verification — 2026-10-03
 
-This is a chronological record. Latest status: an editable text step is implemented
-with automated coverage; **27.x host verification is pending**. The preceding original
+This is a chronological record. Latest status: Premiere Beta **27.1.0** is installed
+and the text-capable panel loads; **text writes and readback remain unverified**.
+The editable text step has automated coverage. The preceding original
 preview panel passed the [Premiere 26.5.2 replay](#final-production-panel-replay--2026-10-08).
 Earlier unrun/blocked statements describe the state at those earlier checkpoints.
 
@@ -269,3 +270,33 @@ Final local checks for this follow-up:
 The review's remaining documentation note about wrapper stability was addressed in
 the README and compatibility notes. These automated results do not upgrade the old
 26.5.2 preview evidence into a 27.x text-write claim.
+
+## Authorized beta installation — 2026-10-08
+
+The user approved installing Premiere Beta and testing editable text. Adobe Creative
+Cloud offered **27.1.0**, build **27.1.0.7**. Installation completed and Premiere Beta
+launched. The installer also installed Media Encoder Beta 27.1.0.7. The existing
+Premiere 26.5.2.5 and Media Encoder 26.5.2.2 application bundles remain installed.
+These versions were read from the installed application metadata.
+
+An isolated verification panel, `local.pea.graphics.beta.verify`, was loaded in
+Premiere Beta through UXP Developer Tools. Its JavaScript and HTML match the production
+build at `cec7c65`; only the manifest ID, name, minimum host version and visible label
+were changed. The [installation evidence](evidence/2026-10-08-graphics-beta-installation.json)
+records those file hashes and the exact application builds.
+
+Observed in the new disposable beta project:
+
+- The panel detected the `MogrtText` constructor and enabled the text workflow.
+- The native file picker loaded an `editable-text-draft` with Korean, newline and emoji
+  text. The panel displayed its decision ID and 1920×1080 dimensions.
+- Basic Lower Third was selected through the native picker, and the preview action
+  produced a visible `PEA Preview · editable-text-27-1` sequence.
+
+The preview receipt has not yet been captured or independently checked on this build.
+Constructor availability and a visible sequence do not prove typed text access or a
+successful text write. Parameter inspection, stable live wrapper identity, text/font
+transactions and readback, edited appearance and undo remain **pending**. Shared
+development-tool UI use by other tasks interrupted the next inspection step; the
+verification session stopped UI actions while coordination was requested. No 27.x
+text-write success is claimed. Production source was unchanged during installation.

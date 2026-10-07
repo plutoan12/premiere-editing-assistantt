@@ -4,6 +4,12 @@ The user requested the next step after the original-template preview passed live
 verification: apply caption text, styling and placement in Premiere. The current
 preview remains usable; its `graphicsApplied:false` result is still accurate.
 
+Latest environment update: the user subsequently approved Premiere Beta installation.
+**27.1.0.7** is now installed alongside 26.5.2.5. The panel detects `MogrtText`, but
+typed text inspection, edits and readback are still pending. See the
+[installation and partial verification record](graphics-engine-verification.md#authorized-beta-installation--2026-10-08).
+The compatibility investigation below describes the earlier 26.5.2 environment.
+
 ## Confirmed compatibility boundary
 
 - The installed application is Premiere Pro **26.5.2**. Its bundle version was checked
@@ -26,15 +32,15 @@ test, upgrade, dependency installation or new caption write was performed here.
 
 The user selected **route 2** on 2026-10-08. The panel now includes a capability-gated,
 uniform text/font editing path. It keeps the result editable in the MOGRT instead of
-rasterizing it. The installed 26.5.2 host cannot verify this newer API; 27.x host
-readback and visual verification are still pending.
+rasterizing it. The 26.5.2 host cannot verify this newer API; text readback and visual
+verification on the subsequently installed 27.1 beta are still pending.
 
 | Route | User-visible result | Work still required |
 | --- | --- | --- |
 | Transparent caption graphics on 26.5.2 | Text/style/placement rendered into a separate image clip; text changes regenerate the asset | Real font measurement and rasterization, alpha output, import/timing verification; explicitly identify the asset as a rendered caption |
 | Editable MOGRT text | Keep text and supported font controls editable inside the template | A host exposing the newer API, template-specific bindings and editability checks, full readback/visual tests; separate handling for unsupported style/emphasis/placement |
 
-Installing/upgrading Premiere is outside this code change.
+The subsequent beta installation was separately authorized by the user.
 The panel must not claim full-plan support merely because a newer text constructor
 exists. Core and the pure GraphicsPlan contracts remain unchanged.
 

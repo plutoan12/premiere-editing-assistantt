@@ -17,8 +17,9 @@ unavailable title/subtitle values after its Capsule component finished loading.
 The original preview panel at `ede9a2e` was verified in Premiere 26.5.2 with both templates: sequence settings,
 insertion, exact start/end readback, property inspection and visible original graphics.
 Receipt export was also verified. See the [host verification record](../../docs/graphics-engine-verification.md#final-production-panel-replay--2026-10-08).
-The added text controls have automated tests only; neither their native UI nor text
-writes have been verified on a 27.x host yet.
+Premiere Beta 27.1.0 now loads the text-capable panel, and its native plan picker was
+replayed. Typed text inspection, writes, readback and undo are still unverified. See
+the [beta installation record](../../docs/graphics-engine-verification.md#authorized-beta-installation--2026-10-08).
 
 ## Build and load
 
@@ -123,8 +124,9 @@ verify that its old inspection cannot edit the replacement. The adapter requires
 live object references: if the SDK returns fresh wrappers, it blocks with
 `TEXT_TARGET_IDENTITY_CHANGED`. Establish this identity behavior on the exact host build;
 do not substitute project-asset identity for clip-instance identity. Keep any uncertain
-write for review rather than retrying it. These checks
-have **not** been run on 27.x on this machine, which currently has only 26.5.2.
+write for review rather than retrying it. These text checks have **not** been completed
+on the installed Premiere Beta 27.1.0.7. Panel loading, constructor detection and the
+native draft picker were observed; no successful text write is claimed.
 
 API evidence: [Adobe's MogrtText/ComponentParam declarations](https://github.com/adobe/premierepro-types/blob/c8f108941197c1d987f08b9916c0d18a2e252699/src/premierepro.d.ts),
 [version boundary and implementation notes](../../docs/graphics-caption-rendering.md).
