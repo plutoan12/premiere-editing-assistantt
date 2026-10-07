@@ -7,3 +7,5 @@ export * from './rules.js';
 export * from './search.js';
 export * from './plans.js';
 export * from './editor-contract.js';
+export * from './snapshot.js';
+export * from './relink.js';
