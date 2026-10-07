@@ -5,6 +5,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -16,8 +17,15 @@ jobs:
       - run: pnpm install --no-frozen-lockfile
       - run: pnpm test
       - run: pnpm typecheck
+      - run: pnpm --filter @pea/premiere-panel build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pea-sync-local-dev
+          path: dist/
+          if-no-files-found: error
   ffmpeg-integration:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -29,3 +37,4 @@ jobs:
       - run: command -v ffmpeg || (sudo apt-get update && sudo apt-get install -y ffmpeg)
       - run: pnpm install --no-frozen-lockfile
       - run: PEA_FFMPEG_INTEGRATION=1 pnpm --filter @pea/sync-helper-client test -- real-media.integration.test.ts
+      - run: PEA_FFMPEG_INTEGRATION=1 pnpm --filter @pea/premiere-panel test
