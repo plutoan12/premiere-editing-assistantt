@@ -88,14 +88,14 @@ export function createPremiereUxpHost(ppro: PremiereModuleLike, bindings: readon
   const owned = new Map<string, { sequence: SequenceLike; projectId: string; mediaKey: string; template: string; templateId: string; items: ProjectItemLike[]; projectPath: string }>();
   async function current(templateId?: string, approvedItems?: ProjectItemLike[]): Promise<PremiereSelection> { return readPremiereSelection(ppro,templateId,approvedItems); }
   function transaction(project: ProjectLike, name: string, action: () => unknown): void {
-    let accepted = false;
+    const result: { accepted: boolean } = { accepted: false };
     project.lockedAccess(() => {
-      accepted = project.executeTransaction(compound => {
+      result.accepted = project.executeTransaction(compound => {
         // Native Actions may not escape this synchronous callback.
         compound.addAction(action());
       }, name);
     });
-    if (accepted !== true) throw new Error('Premiere transaction failed');
+    if (result.accepted !== true) throw new Error('Premiere transaction failed');
   }
   return {
     async snapshot(): Promise<PremiereProjectSnapshot> {
