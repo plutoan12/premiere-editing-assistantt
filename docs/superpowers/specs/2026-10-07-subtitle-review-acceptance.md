@@ -2,6 +2,8 @@
 
 Date: 2026-10-07
 
+This is the initial review-panel checkpoint. Follow-up evidence from 2026-10-08 is recorded in [actual local-model validation](2026-10-08-subtitle-real-model.md) and [Premiere installation/host validation](2026-10-08-subtitle-host-validation.md). The follow-up adds a separate signed CEP caption companion; the earlier unverified/out-of-scope statements below describe this original checkpoint.
+
 ## What is implemented
 
 The standalone Subtitle developer panel treats source dialogue and rendered-sequence captions as equal document types. Both support library search, explicit timing/text/speaker correction, split/merge, revision history, JSON save/open, and SRT/VTT export. A rendered sequence requires an explicit start offset; the offset is applied once at export and does not alter the imported master or source clock.
