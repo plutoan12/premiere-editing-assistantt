@@ -1,9 +1,12 @@
+import {HostBindingSchema} from './bindings.js';
 import {z} from 'zod';
 import {MediaAssetSchema,ClipReferenceSchema,MediaTimeSchema,ArtifactSchema,MediaDocumentSchema,validateBoundedTimeRange} from '@pea/core';
 import {ScanRecordSchema,IngestResultSchema,ProbeRecordSchema} from './scan.js';
 import {MetadataRecordSchema,AnnotationSchema,targetKey} from './metadata.js';
 import {RuleSetSchema} from './rules.js';
 import {SavedSearchSchema} from './search-query.js';
+import {OrganizationPlanSchema} from './plans.js';
+import {HostApplyPlanSchema,ApplyReceiptSchema} from './editor-contract.js';
 export type IdFactory = () => string;
 export const AssetRecordSchema=z.object({
   asset:MediaAssetSchema,fileRevision:z.number().int().positive(),locations:z.array(z.string().min(1)).min(1),
@@ -12,11 +15,11 @@ export const AssetRecordSchema=z.object({
   analysis:z.object({artifact:ArtifactSchema,providerVersion:z.string().min(1),settingsKey:z.string().min(1)}).strict().optional(),
 }).strict();
 export type AssetRecord=z.infer<typeof AssetRecordSchema>;
-export const HostBindingSchema=z.object({bindingId:z.uuid(),clipId:z.string().min(1),adapterId:z.string().min(1),hostProjectKey:z.string().min(1),hostItemId:z.string().min(1),hostRevision:z.string().min(1)}).strict();
-export type HostBinding=z.infer<typeof HostBindingSchema>;
+export {HostBindingSchema,type HostBinding} from './bindings.js';
 export const CatalogSchema=z.object({
   schemaVersion:z.literal('1.0.0'),catalogId:z.uuid(),revision:z.number().int().nonnegative(),
   assets:z.array(AssetRecordSchema),clips:z.array(ClipReferenceSchema),bindings:z.array(HostBindingSchema),
+  organizationPlans:z.array(OrganizationPlanSchema),hostPlans:z.array(HostApplyPlanSchema),receipts:z.array(ApplyReceiptSchema),
   savedSearches:z.array(SavedSearchSchema),
   annotations:z.array(AnnotationSchema),ruleSets:z.array(RuleSetSchema),
   scans:z.array(ScanRecordSchema),jobs:z.array(IngestResultSchema),metadata:z.array(MetadataRecordSchema),
@@ -76,10 +79,29 @@ export function validateCatalog(input:CatalogState):CatalogState {
       }
     }
   }
+  unique(state.organizationPlans.map(x=>x.id),'organization plan ID');
+  unique(state.hostPlans.map(x=>x.id),'host plan ID');
+  unique(state.receipts.map(x=>x.id),'receipt ID');
+  for(const p of state.organizationPlans){
+    if(!state.ruleSets.some(r=>r.id===p.ruleSetId))throw new Error('organization plan references missing rule set');
+    unique(p.assignments.map(x=>targetKey(x.target)),'plan target');
+    if([...p.assignments,...p.issues].some(x=>!hasTarget(state,x.target)))throw new Error('plan references missing target');
+  }
+  for(const p of state.hostPlans){
+    const organization=state.organizationPlans.find(x=>x.id===p.organizationPlanId);
+    if(!organization)throw new Error('host plan references missing organization plan');
+    if(p.operations.some(op=>!organization.assignments.some(a=>targetKey(a.target)===targetKey(op.target))))throw new Error('host operation outside reviewed scope');
+  }
+  for(const r of state.receipts){
+    const p=state.hostPlans.find(x=>x.id===r.hostPlanId);
+    if(!p||r.operations.some(op=>!p.operations.some(x=>x.id===op.id)))throw new Error('receipt references missing plan or operation');
+    if(r.status==='verified_applied'&&r.operations.length!==p.operations.length)throw new Error('incomplete verified receipt');
+    if(r.createdBindings.some(b=>!state.clips.some(c=>c.id===b.clipId)))throw new Error('receipt binding references missing clip');
+  }
   return state;
 }
 export function emptyCatalog(catalogId:string):CatalogState {
-  return validateCatalog({schemaVersion:'1.0.0',catalogId,revision:0,assets:[],clips:[],bindings:[],scans:[],jobs:[],metadata:[],clipStates:[],annotations:[],ruleSets:[],savedSearches:[]});
+  return validateCatalog({schemaVersion:'1.0.0',catalogId,revision:0,assets:[],clips:[],bindings:[],scans:[],jobs:[],metadata:[],clipStates:[],annotations:[],ruleSets:[],savedSearches:[],organizationPlans:[],hostPlans:[],receipts:[]});
 }
 
 export function hasTarget(state:CatalogState,target:{kind:'asset'|'clip';id:string}):boolean {
