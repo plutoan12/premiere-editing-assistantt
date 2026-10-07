@@ -1,0 +1,53 @@
+name: Subtitle Caption Package
+
+on:
+  push:
+    branches: [codex/subtitle-review-workflow]
+  pull_request:
+    paths:
+      - 'apps/premiere-caption-bridge/**'
+      - 'apps/subtitle-panel/**'
+      - 'packages/core/**'
+      - 'packages/transcript/**'
+      - 'adapters/premiere-transcript/**'
+      - 'scripts/*caption*'
+      - 'scripts/build-subtitle-panel.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'tsconfig.base.json'
+      - '.github/workflows/subtitle.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  signed-caption-companion:
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: node --test scripts/sign-caption-bridge.test.mjs
+      - run: pnpm --filter @pea/core --filter @pea/transcript --filter @pea/premiere-transcript --filter @pea/subtitle-panel --filter @pea/premiere-caption-bridge test
+      - run: pnpm --filter @pea/core --filter @pea/transcript --filter @pea/premiere-transcript --filter @pea/subtitle-panel --filter @pea/premiere-caption-bridge typecheck
+      - run: pnpm --filter @pea/premiere-caption-bridge build
+      - name: Sign with the pinned Adobe SDK and verify both package and extracted directory
+        run: node scripts/sign-caption-bridge.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: premiere-caption-bridge-signed-${{ github.sha }}
+          path: |
+            dist/caption-signed/pea-caption-bridge.zxp
+            dist/caption-signed/pea-caption-bridge-verification.txt
+          if-no-files-found: error
+          retention-days: 14

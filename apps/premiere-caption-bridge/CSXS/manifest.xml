@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ExtensionManifest Version="7.0" ExtensionBundleId="com.pea.premiere.captionbridge" ExtensionBundleVersion="0.1.0" ExtensionBundleName="Subtitle Caption Bridge">
+  <ExtensionList><Extension Id="com.pea.premiere.captionbridge.panel" Version="0.1.0" /></ExtensionList>
+  <ExecutionEnvironment>
+    <HostList><Host Name="PPRO" Version="[25.6,99.9]" /></HostList>
+    <LocaleList><Locale Code="All" /></LocaleList>
+    <RequiredRuntimeList><RequiredRuntime Name="CSXS" Version="12.0" /></RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList><Extension Id="com.pea.premiere.captionbridge.panel"><DispatchInfo>
+    <Resources><MainPath>./index.html</MainPath><ScriptPath>./host/bootstrap.jsx</ScriptPath></Resources>
+    <Lifecycle><AutoVisible>true</AutoVisible></Lifecycle>
+    <UI><Type>Panel</Type><Menu>Subtitle · 캡션 적용</Menu>
+      <Geometry><Size><Width>420</Width><Height>580</Height></Size><MinSize><Width>300</Width><Height>360</Height></MinSize></Geometry>
+    </UI>
+  </DispatchInfo></Extension></DispatchInfoList>
+</ExtensionManifest>
