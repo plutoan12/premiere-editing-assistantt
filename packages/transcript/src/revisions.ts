@@ -1,4 +1,4 @@
-import type { Transcript } from "@pea/core";
+import { TranscriptSchema, type Transcript } from "@pea/core";
 import type { TranscriptRevision, TranscriptSourceKind } from "./types.js";
 
 export function createRevision(input: {
@@ -14,6 +14,7 @@ export function createRevision(input: {
     parentRevisionId: input.parentRevisionId,
     source: input.source,
     createdAt: input.createdAt ?? new Date().toISOString(),
-    transcript: structuredClone(input.transcript)
+    // Schema parsing yields detached nested data, including bigint, without a browser-only global.
+    transcript: TranscriptSchema.parse(input.transcript)
   };
 }
