@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>Subtitle · Editing Assistant</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <span class="eyebrow">EDITING ASSISTANT / 03</span>
+      <h1>Subtitle</h1>
+      <p>원본의 대사를 찾고, 편집본의 자막을 다듬으세요.</p>
+    </header>
+
+    <section aria-labelledby="input-heading">
+      <h2 id="input-heading">대사 가져오기</h2>
+      <label for="origin-kind">작업 대상</label>
+      <select id="origin-kind">
+        <option value="source">원본 · 전사와 대사 검색</option>
+        <option value="sequence">편집본 · 자막 제작</option>
+      </select>
+      <div id="sequence-options" class="hidden">
+        <label for="timeline-start">파일 0초에 대응하는 시퀀스 시각 (초)</label>
+        <input id="timeline-start" type="text" placeholder="예: 12.5" />
+        <p class="hint">미리 렌더한 편집본 파일을 선택하세요. SRT·VTT 내보내기에 이 시각을 더합니다.</p>
+      </div>
+      <div id="source-actions" class="button-row">
+        <button id="premiere-read" class="primary">선택 클립의 기존 전사 읽기</button>
+        <button id="premiere-transcribe">Premiere에서 새 전사</button>
+      </div>
+      <div class="helper-block">
+        <div class="button-row"><button id="helper-connect">Helper 연결 JSON 선택</button><span id="helper-status" class="hint">연결 안 됨</span></div>
+        <button id="media-transcribe" class="wide" disabled>파일 선택 후 로컬 전사</button>
+      </div>
+      <div class="button-row">
+        <button id="subtitle-import">SRT / VTT 가져오기</button>
+        <button id="document-open">자막 문서 JSON 열기</button>
+      </div>
+    </section>
+
+    <div class="status-row" role="status" aria-live="polite">
+      <span id="status">대사나 자막 문서를 가져오세요.</span>
+      <button id="cancel" disabled>취소</button>
+    </div>
+
+    <section aria-labelledby="library-heading">
+      <div class="section-title"><h2 id="library-heading">문서 라이브러리</h2><span id="library-count" class="badge">0</span></div>
+      <div id="document-list" class="document-list"></div>
+      <label for="search">모든 문서에서 대사 검색</label>
+      <input id="search" type="text" placeholder="찾을 단어나 문장" />
+      <div id="search-results" class="search-results"></div>
+    </section>
+
+    <section aria-labelledby="editor-heading">
+      <h2 id="editor-heading">자막 검토</h2>
+      <p id="document-summary" class="hint">문서를 선택하세요.</p>
+      <div id="cue-list" class="cue-list"></div>
+      <div id="cue-editor" class="hidden">
+        <div class="field-row">
+          <div><label for="cue-start">시작 (초)</label><input id="cue-start" type="text" /></div>
+          <div><label for="cue-end">끝 (초)</label><input id="cue-end" type="text" /></div>
+        </div>
+        <label for="cue-speaker">화자 ID</label>
+        <input id="cue-speaker" type="text" placeholder="미지정" />
+        <label for="cue-text">자막 텍스트</label>
+        <textarea id="cue-text" rows="4"></textarea>
+        <div class="button-row"><button id="cue-save" class="primary">수정 저장</button><button id="cue-merge">다음 자막과 병합</button></div>
+        <div class="split-block">
+          <h3>이 자막 분할</h3>
+          <label for="split-time">나눌 시각 (초)</label><input id="split-time" type="text" />
+          <label for="split-left">앞 자막</label><textarea id="split-left" rows="2"></textarea>
+          <label for="split-right">뒤 자막</label><textarea id="split-right" rows="2"></textarea>
+          <button id="cue-split">두 자막으로 분할</button>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="output-heading">
+      <h2 id="output-heading">저장 · 내보내기</h2>
+      <p class="hint">JSON 문서에는 원본과 수정 이력이 함께 저장됩니다.</p>
+      <div class="button-row">
+        <button id="document-save" disabled>JSON 저장</button>
+        <button id="srt-export" disabled>SRT 내보내기</button>
+        <button id="vtt-export" disabled>VTT 내보내기</button>
+      </div>
+      <p id="save-reminder" class="hint">편집 내용은 JSON으로 저장한 뒤 패널을 닫으세요.</p>
+    </section>
+  </main>
+  <script src="main.js"></script>
+</body>
+</html>
