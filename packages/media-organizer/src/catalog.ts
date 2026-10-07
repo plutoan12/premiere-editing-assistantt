@@ -3,6 +3,7 @@ import {MediaAssetSchema,ClipReferenceSchema,MediaTimeSchema,ArtifactSchema,Medi
 import {ScanRecordSchema,IngestResultSchema,ProbeRecordSchema} from './scan.js';
 import {MetadataRecordSchema,AnnotationSchema,targetKey} from './metadata.js';
 import {RuleSetSchema} from './rules.js';
+import {SavedSearchSchema} from './search-query.js';
 export type IdFactory = () => string;
 export const AssetRecordSchema=z.object({
   asset:MediaAssetSchema,fileRevision:z.number().int().positive(),locations:z.array(z.string().min(1)).min(1),
@@ -16,6 +17,7 @@ export type HostBinding=z.infer<typeof HostBindingSchema>;
 export const CatalogSchema=z.object({
   schemaVersion:z.literal('1.0.0'),catalogId:z.uuid(),revision:z.number().int().nonnegative(),
   assets:z.array(AssetRecordSchema),clips:z.array(ClipReferenceSchema),bindings:z.array(HostBindingSchema),
+  savedSearches:z.array(SavedSearchSchema),
   annotations:z.array(AnnotationSchema),ruleSets:z.array(RuleSetSchema),
   scans:z.array(ScanRecordSchema),jobs:z.array(IngestResultSchema),metadata:z.array(MetadataRecordSchema),
   clipStates:z.array(z.object({clipId:z.string().min(1),fileRevision:z.number().int().positive(),reviewState:z.enum(["confirmed","needs_review"])}).strict()),
@@ -59,6 +61,7 @@ export function validateCatalog(input:CatalogState):CatalogState {
     if(scan.result?.assetId && !state.assets.some(x=>x.asset.id===scan.result?.assetId)) throw new Error('scan references missing asset');
     if(scan.result?.clipId && !state.clips.some(x=>x.id===scan.result?.clipId)) throw new Error('scan references missing clip');
   }
+  unique(state.savedSearches.map(x=>x.id),'saved search ID');
   unique(state.annotations.map(x=>x.id),'annotation ID');
   unique(state.ruleSets.map(x=>x.id),'rule set ID');
   for(const a of state.annotations){
@@ -76,7 +79,7 @@ export function validateCatalog(input:CatalogState):CatalogState {
   return state;
 }
 export function emptyCatalog(catalogId:string):CatalogState {
-  return validateCatalog({schemaVersion:'1.0.0',catalogId,revision:0,assets:[],clips:[],bindings:[],scans:[],jobs:[],metadata:[],clipStates:[],annotations:[],ruleSets:[]});
+  return validateCatalog({schemaVersion:'1.0.0',catalogId,revision:0,assets:[],clips:[],bindings:[],scans:[],jobs:[],metadata:[],clipStates:[],annotations:[],ruleSets:[],savedSearches:[]});
 }
 
 export function hasTarget(state:CatalogState,target:{kind:'asset'|'clip';id:string}):boolean {

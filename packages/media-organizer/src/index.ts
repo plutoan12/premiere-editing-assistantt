@@ -4,3 +4,4 @@ export * from './scan.js';
 export * from './ingest.js';
 export * from './metadata.js';
 export * from './rules.js';
+export * from './search.js';
