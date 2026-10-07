@@ -3,3 +3,4 @@ export * from './memory-store.js';
 export * from './scan.js';
 export * from './ingest.js';
 export * from './metadata.js';
+export * from './rules.js';

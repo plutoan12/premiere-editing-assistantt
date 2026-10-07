@@ -86,6 +86,10 @@ export async function ingest(rawInputs:ScanInput[],deps:IngestDependencies,ctx?:
               const cs=state.clipStates.find(x=>x.clipId===c.id);
               if(cs)cs.reviewState='needs_review';else state.clipStates.push({clipId:c.id,fileRevision:old.fileRevision,reviewState:'needs_review'});
             }
+            if(changed)for(const annotation of state.annotations){
+              const related=annotation.target.kind==='asset'?annotation.target.id===assetId:state.clips.some(c=>c.id===annotation.target.id&&c.mediaAssetId===assetId);
+              if(related&&annotation.range)annotation.reviewState='needs_review';
+            }
           }else state.assets.push(record);
           if(!old&&range){
             clipId=makeId(deps.ids);state.clips.push({id:clipId,mediaAssetId:assetId,sourceRange:range});
