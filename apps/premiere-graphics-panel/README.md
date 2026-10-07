@@ -8,8 +8,13 @@ as the insertion target. The panel does not save the project automatically.
 Caption text, styling, emphasis, planned placement and template-property overrides are
 **not applied**. Every receipt has `graphicsApplied: false` and lists these omissions.
 The panel must not be described as the full GraphicsPlan renderer. On local Premiere
-26.5.2, Basic Lower Third exposed no text component, and an AE Gaming Lower Third
-exposed null text values after its Capsule component finished loading.
+26.5.2, Basic Lower Third exposed two text components after loading, but their source-text
+values were unavailable to this inspector. An AE Gaming Lower Third also exposed
+unavailable title/subtitle values after its Capsule component finished loading.
+
+The final panel was verified in Premiere 26.5.2 with both templates: sequence settings,
+insertion, exact start/end readback, property inspection and visible original graphics.
+Receipt export was also verified. See the [host verification record](../../docs/graphics-engine-verification.md#final-production-panel-replay--2026-10-08).
 
 ## Build and load
 

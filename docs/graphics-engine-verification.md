@@ -1,5 +1,9 @@
 # Graphics Engine verification — 2026-10-03
 
+This is a chronological record. Latest status: the final production panel passed the
+[Premiere 26.5.2 host replay on 2026-10-08](#final-production-panel-replay--2026-10-08).
+Earlier unrun/blocked statements describe the state at those earlier checkpoints.
+
 ## Delivered
 
 - `packages/graphics/`: template property/resource validation, caption presets and
@@ -148,15 +152,15 @@ caption rendering, typography, planned placement, pixel fidelity, or the final m
 settings/trim/readback sequence. Adobe template binaries and local project files are
 not redistributed in the repository.
 
-### Pending final host replay
+### Replay interruption — 2026-10-07
 
 Another task briefly used the same development-tool UI, so its open dialog was left
 alone. Before the final replay, computer access reported that the **Mac is locked and
 requires manual unlock**. The final production panel and adapter were therefore NOT
 claimed to pass live smoke. Initial exploration above ran before the lock.
 
-After unlocking, build/load `apps/premiere-graphics-panel/dist/manifest.json`, choose a
-disposable project and Basic Lower Third, then run the default preview. Expected:
+The planned replay was to build/load `apps/premiere-graphics-panel/dist/manifest.json`,
+choose a disposable project and Basic Lower Third, then run the default preview. Expected:
 
 - New sequence only, 1920×1080, frame ticks `8475667200` (30000/1001 fps).
 - Start ticks `508540032000` (frame 60), end ticks `762810048000` (frame 90).
@@ -168,3 +172,52 @@ The panel does not save projects automatically. Host import and trim are separat
 undo operations; the implementation does not claim atomic rollback. Template identity
 and version are selected by the caller/user, not inferred from the filename. The
 physical frame rate is configured, while drop-frame timecode display labels are not.
+
+## Final production panel replay — 2026-10-08
+
+After unlocking, the unchanged production code at `ede9a2ef5265a885d5b4cc1f9256e3f068601d99`
+was rebuilt and loaded as **PEA Graphics Preview** (`local.pea.graphics.preview`) through
+UXP Developer Tools. The final panel's native template picker and preview button ran
+against the separate Graphics test project in Premiere Pro **26.5.2**, macOS. The shared
+Premiere UI was used after the Sync task reported pausing its screen interactions.
+
+Both default preview requests passed the actual adapter's settings, empty-track,
+insertion, trim and readback checks. Independent UXP reads then confirmed:
+
+| Template | Result | Frame ticks | Canvas | Start ticks | End ticks |
+| --- | --- | --- | --- | --- | --- |
+| Basic Lower Third | `preview-created` | `8475667200` | 1920×1080 | `508540032000` | `762810048000` |
+| Gaming Lower Third Left (AE) | `preview-created` | `8475667200` | 1920×1080 | `508540032000` | `762810048000` |
+
+This is 30000/1001 fps, start frame 60 and end frame 90. Each run created one new
+sequence with one graphic item. Both receipts retained `graphicsApplied:false` and
+all five unapplied fields. The preview button became disabled after each receipt.
+
+- The program monitor visibly displayed each original template at an interior position
+  (`635675040000` ticks). This was a visual smoke check, not pixel-reference comparison.
+- The production property-inspection handler completed for both templates. In this
+  later read, Basic Lower Third exposed two `AE.ADBE Text` components; both source-text
+  values were `unavailable`. This supersedes the earlier observation of no text components.
+- The AE Capsule exposed 14 parameters. Title/subtitle values were `unavailable`,
+  animation speed/direction were `number`, and its five color parameters were `host-object`.
+  No text-editing or color-editing support is inferred from this inspection.
+- The panel's export handler and native save dialog wrote the Basic receipt, which was
+  read back as valid JSON. UXP Developer Tools was used to invoke the existing inspection/
+  export handlers and capture independent readbacks; production code was not modified.
+- The disposable project was explicitly saved by the verification harness as
+  `dist/pea-graphics-host-smoke.prproj`. The production panel itself does not auto-save.
+  Test projects, Adobe templates and local absolute paths are excluded from Git.
+
+The [normalized host evidence](evidence/2026-10-08-graphics-host-smoke.json) records the
+actual receipts, settings and component summaries without local project identifiers.
+No production-code fix or dependency installation was required for this replay.
+
+Reverification before the host run: **142 tests / 20 files passed**; Graphics and
+Premiere adapter typechecks, panel build and whitespace checks passed. The existing
+GitHub CI runs for `ede9a2e` also passed full workspace tests/typechecks and the panel build.
+
+Remaining limits: loading a custom request JSON through the panel was not replayed in
+the real host; its engine conversion/validation is covered by automated tests. Host
+negative cases remain simulated tests. Planned caption text, typography, emphasis,
+placement and template-property edits still require a tested renderer and are not
+implemented by this preview. Drop-frame display labels and pixel fidelity were not tested.

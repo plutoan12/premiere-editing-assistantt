@@ -10,7 +10,9 @@ Premiere 26.5.2 and UXP Developer Tools are installed. Adobe's UXP API supports
 MOGRT insertion, transactions, string ticks and sequence settings. Live exploration
 in a newly created test project inserted both Basic Lower Third and an AE Gaming
 Lower Third. After loading, the AE Capsule component appeared, but title/subtitle
-keyframe values were null; the native template had no exposed text component.
+keyframe values were null; the native template initially had no exposed text component.
+In the final replay, its text components appeared after loading, but source-text values
+remained unavailable to the inspector.
 
 Therefore this increment implements an explicitly named **template preview**, not
 full caption rendering. Do not enable the compiler's captionLayout/emphasis flags.
@@ -31,6 +33,8 @@ Full text/style/placement application remains blocked on a tested text renderer.
 
 ## Completion record
 
-Steps 1–4 are implemented and tested. Initial real-host exploration passed; the final
-module/panel replay is pending because the Mac locked during verification. See the
-verification report for exact evidence and reproducible remaining checks.
+Steps 1–5 are complete. The final production panel replay passed in Premiere 26.5.2 on
+2026-10-08 (Asia/Seoul), using Basic Lower Third and Gaming Lower Third Left. Settings,
+insertion, trim/readback, original-template display and property inspection passed;
+the Basic receipt was exported through the panel. No production-code correction was
+needed. See the verification report for exact evidence and remaining full-renderer limits.
