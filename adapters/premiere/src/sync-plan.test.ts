@@ -35,3 +35,26 @@ describe("Premiere sync dry run",()=>{
   expect(r.warnings.some(x=>x.includes("quantized"))).toBe(true);
  });
 });
+
+
+describe("mixed timebase and identity safety",()=>{
+ it("normalizes 25fps and 60fps offsets exactly on a 24fps sequence",()=>{
+  const mixed:SyncGroup={...group,members:[
+   {...group.members[0],offset:{ticks:100n,timebase:{numerator:1,denominator:25}},offsetTicks:100n},
+   {...group.members[1],offset:{ticks:120n,timebase:{numerator:1,denominator:60}},offsetTicks:120n}
+  ]};
+  const r=buildSyncDryRun(mixed,snapshot,{sequenceName:"Mixed",frameRate:{numerator:24,denominator:1}});
+  expect(r.errors).toEqual([]);
+  expect(r.operations.map(x=>x.startSeconds)).toEqual([2,0]);
+ });
+ it("rejects duplicate clip identities",()=>{
+  const duplicate:SyncGroup={...group,members:[group.members[0],group.members[0]]};
+  const r=buildSyncDryRun(duplicate,snapshot,{sequenceName:"Duplicate",frameRate:{numerator:24,denominator:1}});
+  expect(r.errors.some(x=>x.includes("duplicate clipId"))).toBe(true);
+  expect(r.operations).toEqual([]);
+ });
+ it("rejects mismatched offset alias",()=>{
+  const bad:SyncGroup={...group,members:[{...group.members[0],offsetTicks:1n},group.members[1]]};
+  expect(buildSyncDryRun(bad,snapshot,{sequenceName:"Bad",frameRate:{numerator:24,denominator:1}}).errors.some(x=>x.includes("alias mismatch"))).toBe(true);
+ });
+});
