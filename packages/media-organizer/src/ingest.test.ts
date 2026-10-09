@@ -418,3 +418,128 @@ it("restores availability when a verified unchanged source returns", async () =>
     ).assignments,
   ).toHaveLength(1);
 });
+
+it.each(["canonical", "mirror"] as const)(
+  "keeps only the verified location after replacing the %s contents",
+  async (location) => {
+    const d = setup();
+    await media.ingest([input()], d);
+    let s = await d.store.read();
+    const assetId = s.assets[0].asset.id;
+    const canonical = input().uri,
+      mirror = "file:///backup/A001.mov";
+    s.assets[0].locations.push(mirror);
+    s = media.setMetadataOverride(
+      s,
+      { kind: "asset", id: assetId },
+      "deviceId",
+      "CAM_A",
+    );
+    await d.store.commit(s.revision, s);
+    const replaced = location === "canonical" ? canonical : mirror;
+    const previous = location === "canonical" ? mirror : canonical;
+    d.files.sha256 = async (uri) => (uri === replaced ? "b" : "a").repeat(64);
+    await media.ingest(
+      [{ ...input(2, replaced), existingAssetId: assetId }],
+      d,
+    );
+    const after = await d.store.read();
+    expect(after.assets[0].locations).toEqual([replaced]);
+    expect(after.assets[0].asset).toMatchObject({
+      id: assetId,
+      uri: replaced,
+      fingerprint: { value: "b".repeat(64) },
+    });
+    expect(after.assets[0].fileRevision).toBe(2);
+    expect(after.clips).toEqual(s.clips);
+    expect(
+      media.effectiveMetadata({ kind: "asset", id: assetId }, after, "deviceId")
+        .value,
+    ).toBe("CAM_A");
+    await expect(
+      media.ingest([{ ...input(3, previous), existingAssetId: assetId }], d),
+    ).rejects.toThrow(/location/);
+    if (location === "mirror") {
+      expect((await media.ingest([input()], d)).items[0].state).toBe(
+        "unsupported",
+      );
+    }
+    await media.ingest([input(4, previous)], d);
+    const separate = await d.store.read();
+    expect(separate.assets).toHaveLength(2);
+    expect(separate.assets[0].asset.fingerprint.value).toBe("b".repeat(64));
+    expect(separate.assets[0].fileRevision).toBe(2);
+    expect(separate.assets[1].asset.fingerprint.value).toBe("a".repeat(64));
+  },
+);
+
+it("preserves verified mirrors when a rescan confirms the same contents", async () => {
+  const d = setup();
+  await media.ingest([input()], d);
+  const before = await d.store.read();
+  const mirror = "file:///backup/A001.mov";
+  before.assets[0].locations.push(mirror);
+  await d.store.commit(before.revision, before);
+  await media.ingest(
+    [{ ...input(2, mirror), existingAssetId: before.assets[0].asset.id }],
+    d,
+  );
+  const after = await d.store.read();
+  expect(after.assets[0].locations).toEqual(before.assets[0].locations);
+  expect(after.assets[0].asset.uri).toBe(input().uri);
+  expect(after.assets[0].fileRevision).toBe(1);
+});
+
+it("reports and persists content updates while resumed results remain unchanged", async () => {
+  const d = setup();
+  let hash = "a".repeat(64),
+    hashes = 0;
+  d.files.sha256 = async () => {
+    hashes++;
+    return hash;
+  };
+  await media.ingest([input()], d);
+  hash = "b".repeat(64);
+  d.files.stat = async () => ({ ...stamp, mtimeNs: 2n });
+  const changed = await media.ingest([input()], d);
+  expect(changed.items[0].state).toBe("updated");
+  const state = await d.store.read();
+  expect(state.scans[0].state).toBe("updated");
+  expect(state.scans[0].result?.state).toBe("updated");
+  expect(
+    state.jobs.find((x) => x.job.id === changed.job.id)?.items[0].state,
+  ).toBe("updated");
+  expect(state.assets[0].fileRevision).toBe(2);
+  // The new result state must survive exchange and remain a reusable success.
+  d.store = media.createMemoryCatalog(
+    media.importCatalog(media.exportCatalog(state)),
+  );
+  const resumed = await media.ingest([input()], d);
+  expect(resumed.items[0].state).toBe("unchanged");
+  expect(hashes).toBe(2);
+  expect((await d.store.read()).assets[0].fileRevision).toBe(2);
+  d.providerVersion = "probe2";
+  expect((await media.ingest([input()], d)).items[0].state).toBe("unchanged");
+  expect(hashes).toBe(3);
+});
+
+it("reports a content update once when duplicate requests share its result", async () => {
+  const d = setup();
+  await media.ingest([input()], d);
+  const assetId = (await d.store.read()).assets[0].asset.id;
+  let hashes = 0;
+  d.files.sha256 = async () => {
+    hashes++;
+    return "b".repeat(64);
+  };
+  const changed = await media.ingest(
+    [
+      { ...input(2, input().uri), existingAssetId: assetId },
+      { ...input(3, input().uri), existingAssetId: assetId },
+    ],
+    d,
+  );
+  expect(changed.items.map((x) => x.state)).toEqual(["updated", "unchanged"]);
+  expect(hashes).toBe(1);
+  expect((await d.store.read()).assets[0].fileRevision).toBe(2);
+});

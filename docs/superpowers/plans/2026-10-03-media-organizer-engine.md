@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- **계획 상태:** 2026-10-07 사용자가 직접 구현을 선택했다. Task 1–8 구현, 독립 코드 검토, 중요 지적 5건 수정 및 전체 146개 테스트·타입 검사를 완료했다. [검증 기록](../../research/2026-10-07-media-organizer-validation.md)에 결과와 판단을 남겼다. UXP·SQLite·실제 호스트 테스트는 후속 범위다.
+- **계획 상태:** 2026-10-07 사용자가 직접 구현을 선택했다. Task 1–8 구현, 독립 코드 검토 및 중요 지적 5건 수정을 완료했다. 2026-10-09 PR #17의 추가 지적 3건도 반영해 전체 153개 테스트·타입 검사를 통과했다. [검증 기록](../../research/2026-10-07-media-organizer-validation.md)에 결과와 판단을 남겼다. UXP·SQLite·실제 호스트 테스트는 후속 범위다.
 - **기준 코드:** `origin/feat/core-contracts`의 `9f2119ce55bd090c86e84b058725776a9405228c`. 2026-10-03 재조회 시 변경 없음. `main`에 병합됐다고 가정하지 않는다.
 - 실행 시 관리되는 별도 작업 트리에서 시작한다. 현재 `codex/premiere-sync` 작업 트리는 유지한다. Core 변경은 별도 커밋으로 분리하고 기반 브랜치의 후속 변경과 중복되지 않는지 확인한다.
 - 기존 Core의 `MediaAsset`, `ClipReference`, `MediaTime`, `Job`, `Artifact`, `Provenance`, `MediaProbeProvider`를 재사용한다. 다른 Core나 Sync 알고리즘을 만들지 않는다.

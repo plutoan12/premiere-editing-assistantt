@@ -78,7 +78,7 @@ function reusableScan(
     scan.verifiedAnalysis &&
     asset?.analysis &&
     scan.result.assetId === asset.asset.id &&
-    ["registered", "unchanged"].includes(scan.state) &&
+    ["registered", "updated", "unchanged"].includes(scan.state) &&
     asset.sourceState !== "unverified" &&
     asset.analysis.artifact.status === "valid" &&
     scan.verifiedAnalysis.fileRevision === asset.fileRevision &&
@@ -252,13 +252,14 @@ export async function ingest(
           const record = {
             asset: {
               id: assetId,
-              uri: old?.asset.uri ?? input.uri,
+              uri: changed ? input.uri : (old?.asset.uri ?? input.uri),
               fingerprint: { algorithm: "sha256" as const, value: hash },
               readOnly: true as const,
               frameRate: probe.frameRate,
             },
             fileRevision: revision,
-            locations: old?.locations ?? [input.uri],
+            // Only this location has been verified against a replacement hash.
+            locations: changed ? [input.uri] : (old?.locations ?? [input.uri]),
             duration: probe.duration,
             availability: "online" as const,
             sourceState: "verified" as const,
@@ -345,7 +346,7 @@ export async function ingest(
           }
           result = {
             scanId: input.scanId,
-            state: old ? "unchanged" : "registered",
+            state: old ? (changed ? "updated" : "unchanged") : "registered",
             assetId,
             clipId,
           };

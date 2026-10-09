@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import * as media from "./index.js";
-import { id, assetRecord, clip } from "./testing/fixtures.js";
+import { id, assetRecord, clip, time } from "./testing/fixtures.js";
 const target = { kind: "clip" as const, id: id(2) };
 const fixture = (): media.CatalogState => ({
   ...media.emptyCatalog(id(100)),
@@ -112,3 +112,69 @@ it("persists reviewed plans against the resulting revision and rejects stale rev
     /revision/,
   );
 });
+
+it.each(["asset", "clip"] as const)(
+  "plans only confirmed whole-item tags for a %s",
+  (kind) => {
+    let s = fixture();
+    const assetTarget = { kind: "asset" as const, id: id(1) };
+    const selected = kind === "asset" ? assetTarget : target;
+    const annotations: media.Annotation[] = [
+      {
+        id: id(70),
+        target: assetTarget,
+        kind: "tag",
+        value: "whole-asset",
+        origin: "user",
+        reviewState: "confirmed",
+      },
+      {
+        id: id(71),
+        target: assetTarget,
+        kind: "tag",
+        value: "first-two-seconds",
+        range: { start: time(0n), duration: time(2n) },
+        origin: "user",
+        reviewState: "confirmed",
+      },
+      {
+        id: id(72),
+        target: assetTarget,
+        kind: "tag",
+        value: "needs-confirmation",
+        origin: "user",
+        reviewState: "needs_review",
+      },
+      {
+        id: id(73),
+        target: target,
+        kind: "tag",
+        value: "whole-clip",
+        origin: "user",
+        reviewState: "confirmed",
+      },
+      {
+        id: id(74),
+        target: target,
+        kind: "tag",
+        value: "old-clip-range",
+        range: { start: time(0n), duration: time(2n) },
+        origin: "user",
+        reviewState: "needs_review",
+      },
+    ];
+    for (const a of annotations) s = media.upsertAnnotation(s, a);
+    const before = structuredClone(s);
+    const plan = media.buildOrganizationPlan(
+      s,
+      [selected],
+      { ...media.defaultRuleSet(id(50)), orderedFields: [] },
+      [],
+      () => id(60),
+    );
+    expect(plan.assignments[0].tags).toEqual(
+      kind === "asset" ? ["whole-asset"] : ["whole-asset", "whole-clip"],
+    );
+    expect(s).toEqual(before);
+  },
+);

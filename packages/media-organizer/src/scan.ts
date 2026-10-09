@@ -46,6 +46,7 @@ export const IngestItemSchema = z
     scanId: z.uuid(),
     state: z.enum([
       "registered",
+      "updated",
       "unchanged",
       "offline",
       "unsupported",

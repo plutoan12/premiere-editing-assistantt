@@ -93,7 +93,10 @@ export function buildOrganizationPlan(
         tags: [
           ...new Set(
             annotationsForTarget(target, state)
-              .filter((x) => x.kind === "tag")
+              .filter(
+                (x) =>
+                  x.kind === "tag" && x.reviewState === "confirmed" && !x.range,
+              )
               .map((x) => String(x.value)),
           ),
         ],

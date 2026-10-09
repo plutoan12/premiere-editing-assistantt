@@ -11,6 +11,9 @@ It reuses `@pea/core` media/time/job contracts and MiniSearch 7.2.0.
   is an in-memory reference store, not a durable production database.
 - Separate assets, clips and editor bindings. Same filename/hash does not merge
   independent sources or clips. Still images can exist without invented durations.
+  When one registered location changes content, only that verified location is
+  retained for the new revision and becomes the canonical URI. Other copies can
+  be registered separately; original files are never moved or deleted.
 - Probe observations, explicit user overrides, notes, tags and favorites.
   Reanalysis preserves user values. Changed content marks previous clip ranges and
   ranged annotations for review; it does not rewrite them to fit new media.
@@ -25,6 +28,8 @@ It reuses `@pea/core` media/time/job contracts and MiniSearch 7.2.0.
   saved queries and rebuildable indexes. This is lexical search, not semantic AI.
 - Reviewed organization plans, editor capability contracts, stale-context checks,
   observation-based retry selection and receipt reconciliation.
+  Whole-item plan tags include only confirmed annotations without a range.
+  Ranged and review-required tags remain intact in the catalog.
 - Versioned JSON exchange with exact bigint times and verified explicit relinking.
 
 ## Integration
@@ -76,6 +81,10 @@ require review. `acceptedUnknowns` cannot bypass source or date confirmation.
 To retry a failed Job in place, supply `retryJobId`; completed/cancelled Jobs start
 a new Job. Partial item failures still produce a completed Job when its results
 were safely stored. Storage failures never produce success.
+Successful item states distinguish `registered` (new asset), `updated` (existing
+asset contents replaced), and `unchanged` (same contents or verified cache reuse).
+`updated` is persisted in scan and Job results and survives JSON exchange; a later
+cache reuse reports `unchanged`. Consumers of result states must handle `updated`.
 
 `importCatalog` validates without modifying a store. Unsupported catalog/Core
 versions are rejected. Adapter action payloads remain JSON and are not authorized
