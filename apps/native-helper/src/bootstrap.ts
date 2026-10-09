@@ -2,7 +2,7 @@ import {mkdtemp,writeFile,chmod,unlink,rmdir} from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createHelperServer} from './server.js';
-export async function startHelperSession(options: {ffmpegPath?: string; ffprobePath?: string} = {}): Promise<{sessionFile: string; close(): Promise<void>}> {
+export async function startHelperSession(options: {ffmpegPath?: string; ffprobePath?: string; audioOutputRoot?: string} = {}): Promise<{sessionFile: string; close(): Promise<void>}> {
   const helper=await createHelperServer({host:'127.0.0.1',port:0,...options});
   let directory:string|undefined;
   try {

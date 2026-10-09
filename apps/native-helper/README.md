@@ -88,3 +88,69 @@ They do not measure real production-footage accuracy or all camera codecs.
 
 Remaining release gates: permitted camera/recorder footage, macOS execution,
 Premiere UXP handshake/adapter, disposable-project Apply, and signed installation.
+
+## Audio DSP jobs and Audio Engine integration
+
+`audio-measure` and `audio-normalize` use the same authenticated `/v1/jobs`
+queue, two-operation limit, cancellation and shutdown as the Sync helper.
+A measure input is `{ path, streamIndex, monoPolicy }`. `streamIndex` is the
+absolute FFprobe stream index; `monoPolicy` is explicitly `native` or `dual-mono`.
+Measurements cover the **entire selected stream** at its native sample rate and
+channel layout. They never use Sync's downmixed 8 kHz windows.
+
+To enable rendering, the launcher must set `PEA_AUDIO_OUTPUT_ROOT` to an existing
+local directory (or supply `audioOutputRoot` to `startHelperSession` /
+`createHelperServer`). Without this setting, measurement works and rendering
+fails with `OUTPUT_DISABLED`. HTTP input cannot choose an output root or filter.
+Normalize input additionally requires:
+
+```json
+{
+  "approved": true,
+  "allowDynamic": false,
+  "target": { "integratedLufs": -23, "truePeakDbtp": -2, "loudnessRangeLu": 11 }
+}
+```
+
+Approval must come from the calling UI. Two-pass FFmpeg `loudnorm` writes to a new
+private directory, remeasures the derivative, and verifies sample rate, exact sample
+count and channel layout before returning its report. `allowDynamic: false` rejects
+a result that needs dynamic processing. Report warnings determine `ready-for-review`
+or `review-required`; **both still require listening review** (`humanReview: pending`).
+Deleting a terminal HTTP job removes its in-memory record, not its output files.
+The source and earlier output directories are never replaced. No render is applied
+to a Premiere timeline by this helper.
+
+Native callers can import `createFfmpegLoudnessProvider` from
+`src/audio-engine-provider.ts`, create it once for their selected stream, and pass
+it to the public `@pea/audio` runner:
+
+```ts
+const provider = await createFfmpegLoudnessProvider({ streamIndex: 0, monoPolicy: "native" });
+const result = await runAudioJob({
+  jobId, artifactId, artifactVersion: 1, attempt: 0,
+  source, operation: "loudness", settings: {},
+}, provider, { isCurrent: () => sourceRevision === currentSourceRevision });
+```
+
+`source` uses the Core read-only file URI/SHA-256 contract, with a zero-start range
+whose duration is the exact decoded stream sample count. Trimmed clips and ambiguous
+nonzero audio/container offsets are rejected. Optional channel labels use FFmpeg
+order: mono `[FC]`, stereo `[FL, FR]`, 5.1 `[FL, FR, FC, LFE, BL, BR]`,
+5.1(side) `[FL, FR, FC, LFE, SL, SR]`, and 7.1
+`[FL, FR, FC, LFE, BL, BR, SL, SR]`. Measured fingerprint, rate, count and supplied
+layout must match before the engine can promote an artifact.
+
+Provider identity includes stream selection, mono policy and FFmpeg/FFprobe build
+information. Recreate the provider when the runtime changes. The app must refresh
+source fingerprints and revisions before reusing an `AudioCache`; its `isCurrent`
+callback is responsible for confirming that a cached source remains current.
+`proposeNormalization` consumes the resulting LUFS/true-peak pair as a constant-gain
+proposal. Actual two-pass rendering remains the separate approval-gated helper job;
+its dynamic result is never represented as a constant-gain decision or denoising.
+
+The bridge does not provide noise cleanup. Dialogue, beats and ducking are engine
+analysis/decision APIs, not rendered effects. Synthetic FFmpeg fixtures exercise
+stereo phase preservation, selected streams, source immutability, actual measurement,
+normalization, HTTP jobs and failure cleanup. These checks do not certify standards
+conformance, listening quality or Premiere host integration.

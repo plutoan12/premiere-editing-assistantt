@@ -8,10 +8,13 @@ import {validateLocalPath} from './media-path.js';
 import {JobRegistry} from './jobs.js';
 import {HelperError,publicError,throwIfAborted} from './errors.js';
 import {binaryAudio,exactKeys,json,object,pcmBytes,readJson} from './http-codec.js';
+import {AudioDspService} from './audio-dsp.js';
+import {prepareAudioJob} from './audio-dsp-jobs.js';
 
 export interface HelperServer {address: string; sessionToken: string; close(): Promise<void>}
 export interface HelperServerOptions {
   host: string; port: number; sessionToken?: string; ffmpegPath?: string; ffprobePath?: string;
+  audioOutputRoot?: string;
   probe?: (path: string, signal?: AbortSignal) => Promise<MediaProbe>;
   audio?: (path: string, request: AudioWindowRequest, sampleRate: number) => Promise<AudioSampleWindow>;
 }
@@ -42,6 +45,7 @@ export async function createHelperServer(options: HelperServerOptions): Promise<
   const sessionToken=options.sessionToken??randomBytes(32).toString('hex');
   if (!/^[\x21-\x7e]{1,512}$/.test(sessionToken)) throw new HelperError('INVALID_CONFIG','Invalid session token',400);
   const jobs=new JobRegistry();
+  const dsp=new AudioDspService({ffmpegPath:options.ffmpegPath,ffprobePath:options.ffprobePath,outputRoot:options.audioOutputRoot});
   const controllers=new Set<AbortController>(),operations=new Set<Promise<unknown>>();
   let closing=false;
   const probe=options.probe??((path,signal)=>probeMedia(path,{signal,ffprobePath:options.ffprobePath}));
@@ -88,6 +92,9 @@ export async function createHelperServer(options: HelperServerOptions): Promise<
           id=jobs.submit('audio-window',signal=>limited(async()=>{
             const window=await audio(path,{...request,signal},rate);pcmBytes(window);return window;
           },signal));
+        } else if (body.kind==='audio-measure'||body.kind==='audio-normalize') {
+          const work=prepareAudioJob(dsp,body.kind,input);
+          id=jobs.submit(body.kind,signal=>limited(()=>work(signal),signal));
         } else throw new HelperError('INVALID_JOB','Unsupported job kind',400);
         return json(res,202,{id,kind:body.kind,status:'queued'});
       }
