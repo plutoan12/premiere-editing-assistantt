@@ -231,6 +231,16 @@ export function prepareBinPlan(
       };
     })
     .filter((m) => m.destinationId !== m.before.parentId);
+  const missingBins = new Set<string>();
+  for (const move of moves)
+    for (let depth = 1; depth <= move.pathSegments.length; depth++) {
+      const prefix = move.pathSegments.slice(0, depth);
+      if (!destination(tree, prefix)) missingBins.add(JSON.stringify(prefix));
+    }
+  demand(
+    tree.items.length + missingBins.size <= 10000,
+    "새 Bin을 포함하면 프로젝트 항목이 10,000개 한도를 넘습니다. 적용하지 않았습니다.",
+  );
   const hostPlan: HostApplyPlan = {
     id: ids(),
     organizationPlanId: organization.id,

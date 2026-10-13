@@ -32,7 +32,8 @@ const status = el("status"),
   assetSelect = el<HTMLSelectElement>("asset");
 let connection: { baseUrl: string; token: string } | undefined,
   state: CatalogState | undefined,
-  busy = false;
+  busy = false,
+  canCancel = false;
 let preview = new Map<string, PreviewRow>();
 const index = createSearchIndex(),
   rules = defaultRuleSet("d476751f-1b86-46e0-b5b2-0ba7b07fa4c1");
@@ -40,7 +41,7 @@ function buttons() {
   for (const id of ["files", "selection", "refresh", "save"])
     el<HTMLButtonElement>(id).disabled = busy || !connection;
   el<HTMLButtonElement>("connect").disabled = busy;
-  el<HTMLButtonElement>("cancel").disabled = !busy || !connection;
+  el<HTMLButtonElement>("cancel").disabled = !canCancel || !connection;
   el<HTMLButtonElement>("prepareBins").disabled = busy || !state || !connection;
   el<HTMLButtonElement>("applyBins").disabled =
     busy || !binPlan?.moves.length || !connection;
@@ -60,6 +61,16 @@ async function request(route: string, input?: unknown) {
   if (!response.ok)
     throw new Error(body.message ?? body.error ?? "로컬 엔진 요청 실패");
   return body;
+}
+async function cancellableRequest(route: string, input: unknown) {
+  canCancel = true;
+  buttons();
+  try {
+    return await request(route, input);
+  } finally {
+    canCancel = false;
+    buttons();
+  }
 }
 function selectedMetadata() {
   if (!state) return;
@@ -142,7 +153,7 @@ function run(action: () => Promise<void>) {
     } catch (e) {
       status.textContent = e instanceof Error ? e.message : String(e);
     } finally {
-      busy = false;
+      ((busy = false), (canCancel = false));
       buttons();
     }
   };
@@ -173,7 +184,7 @@ async function register(paths: string[]) {
     return;
   }
   status.textContent = `${paths.length}개 파일을 읽는 중입니다…`;
-  const response = await request("/ingest", { paths });
+  const response = await cancellableRequest("/ingest", { paths });
   await accept(response.catalog);
   const counts: Record<string, number> = {};
   for (const item of response.result.items)
@@ -225,7 +236,8 @@ el("refresh").addEventListener(
 el("cancel").addEventListener("click", async () => {
   try {
     await request("/cancel", {});
-    status.textContent = "중지 요청을 보냈습니다. 완료된 파일은 저장됩니다.";
+    status.textContent =
+      "원본 확인 중지를 요청했습니다. 완료된 파일 등록은 저장됩니다.";
   } catch (e) {
     status.textContent = String(e);
   }
@@ -288,7 +300,7 @@ el("applyBins").addEventListener(
     const plan = binPlan;
     binPlan = undefined;
     status.textContent = "적용 전 원본 내용을 확인하는 중입니다…";
-    await request("/verify-sources", {
+    await cancellableRequest("/verify-sources", {
       revision: plan.hostPlan.expectedContext.catalogRevision,
       sources: plan.moves.map((m) => ({
         assetId: m.assetId,

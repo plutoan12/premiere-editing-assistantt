@@ -287,3 +287,40 @@ it("compares host snapshots independently of object property order", async () =>
   await organizer.applyBinPlan(plan, f.host, f.save);
   expect(f.journal.status).toBe("applied");
 });
+it("rejects plans that would exceed the host read limit before creating any bins", () => {
+  const f = fixture();
+  for (let n = f.tree.items.length; n < 9998; n++)
+    f.tree.items.push({
+      id: `existing-${n}`,
+      name: `Existing ${n}`,
+      parentId: "root",
+      kind: "bin",
+    });
+  expect(() => f.prepare()).toThrow(/10,000|10000|한도/);
+  expect(f.calls).toBe(0);
+});
+it("restores both applied and unapplied items after a partial host move failure", async () => {
+  const f = fixture();
+  f.tree.items.push({ ...f.tree.items[2], id: "copy" });
+  f.tree.selectedIds.push("copy");
+  const transact = f.host.transact.bind(f.host);
+  let failed = false;
+  f.host.transact = async (expected, commands) => {
+    if (!failed && commands[0]?.kind === "move") {
+      failed = true;
+      await transact(expected, [commands[0]]);
+      throw Error("partial host move");
+    }
+    await transact(expected, commands);
+  };
+  await expect(
+    organizer.applyBinPlan(f.prepare(), f.host, f.save),
+  ).rejects.toThrow(/partial/);
+  await organizer.undoBinPlan(f.journal, f.host, f.save);
+  expect(
+    f.tree.items
+      .filter((i) => i.id === "clip" || i.id === "copy")
+      .map((i) => i.parentId),
+  ).toEqual(["original", "original"]);
+  expect(f.tree.items.some((i) => i.id.startsWith("new-"))).toBe(false);
+});
