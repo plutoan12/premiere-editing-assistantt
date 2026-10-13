@@ -1,0 +1,16 @@
+export type { SyncStrategy, SyncReason, SyncEvidence, SyncConfidence, SyncCandidate, SyncMember, SyncGroup } from './types.js';
+export { SyncValidationError } from './types.js';
+export { parseTimecode, frameTimebase, compatibleTimecode, matchTimecode, buildTimecodeSyncGroup } from './timecode.js';
+export { chooseSyncStrategy } from './strategy.js';
+export type { AudioSampleWindow, AudioSampleProvider } from './audio-provider.js';
+export { MAX_ANALYSIS_SAMPLES } from './audio-provider.js';
+export type { AudioCorrelationOptions, AudioCorrelationResult } from './audio-correlation.js';
+export { correlateAudio } from './audio-correlation.js';
+export type { SyncOptions } from './sync.js';
+export { syncClips } from './sync.js';
+export type { MulticamEvidence, MulticamGrouping } from './multicam.js';
+export { buildMulticamGroups } from './multicam.js';
+export type { PlaybackTakeResult } from './playback.js';
+export { syncPlayback, syncPlaybackBatch } from './playback.js';
+export type { SourceTimedArtifact, ArtifactPlacement, ResyncResult } from './resync.js';
+export { resyncArtifacts } from './resync.js';

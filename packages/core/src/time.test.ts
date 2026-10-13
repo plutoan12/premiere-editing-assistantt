@@ -1,0 +1,2 @@
+import {describe,it,expect} from "vitest"; import {compareMediaTime,validateTimeRange} from "./time.js";
+describe("media time",()=>{it("compares fractional NTSC timebases exactly",()=>{expect(compareMediaTime({ticks:24000n,timebase:{numerator:1001,denominator:24000}},{ticks:24000n,timebase:{numerator:1001,denominator:24000}})).toBe(0)}); it("rejects negative durations",()=>{expect(()=>validateTimeRange({start:{ticks:0n,timebase:{numerator:1,denominator:24}},duration:{ticks:-1n,timebase:{numerator:1,denominator:24}}})).toThrow(/duration/)})});

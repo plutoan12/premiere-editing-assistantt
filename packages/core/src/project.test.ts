@@ -1,0 +1,1 @@
+import {describe,it,expect} from "vitest"; import {ProjectSchema} from "./project.js"; describe("project contract",()=>{it("requires schema version 1.0.0",()=>{expect(()=>ProjectSchema.parse({schemaVersion:"2.0.0",id:"p1",name:"x",createdAt:new Date().toISOString()})).toThrow()})});
