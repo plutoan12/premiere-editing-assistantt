@@ -363,9 +363,11 @@ export async function ingest(
         const status =
           error instanceof ItemFailure
             ? error.state
-            : code === "ENOENT"
-              ? "offline"
-              : "failed";
+            : ctx?.signal?.aborted
+              ? "cancelled"
+              : code === "ENOENT"
+                ? "offline"
+                : "failed";
         result = {
           scanId: input.scanId,
           state: status,

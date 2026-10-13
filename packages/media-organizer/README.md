@@ -122,3 +122,7 @@ recovery require host integration tests before release.
 
 Source/reuse rationale: `docs/research/2026-10-03-media-organizer-code-reuse.md`.
 MiniSearch's MIT notice is preserved in the root `THIRD_PARTY_NOTICES.md`.
+
+## Development host integration
+
+The [Media Organizer runtime panel](../../apps/media-panel/README.md) now connects a read-only ffprobe provider, durable SQLite snapshots and a Premiere UXP search/classification preview. Real Bin apply remains a follow-up adapter task. The engine itself remains host-independent.
