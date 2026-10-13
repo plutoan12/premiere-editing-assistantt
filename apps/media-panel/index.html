@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        height: 100vh;
+        overflow-y: auto;
+        padding: 18px;
+        margin: 0;
+        background: #252525;
+        color: #eee;
+        font-size: 14px;
+      }
+      h2 {
+        font-size: 23px;
+        margin: 0 0 10px;
+      }
+      p {
+        line-height: 1.5;
+        margin: 10px 0;
+      }
+      button {
+        margin: 5px 5px 5px 0;
+      }
+      input,
+      select {
+        width: 100%;
+        margin: 5px 0;
+      }
+      label {
+        display: block;
+        margin: 8px 0;
+      }
+      textarea {
+        width: 100%;
+        height: 320px;
+        margin: 12px 0;
+        font-size: 13px;
+      }
+      #status {
+        color: #a7dfb0;
+      }
+      #count {
+        color: #bbb;
+        font-size: 12px;
+      }
+      .section {
+        border-top: 1px solid #555;
+        margin-top: 14px;
+        padding-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Media Organizer</h2>
+    <p>촬영 파일을 등록하고 날짜·카메라별 분류를 미리 확인하세요.</p>
+    <button id="connect">로컬 엔진 연결</button
+    ><button id="refresh" disabled>저장된 목록 새로 읽기</button>
+    <p id="status">연결 파일을 선택하면 저장된 파일 목록을 불러옵니다.</p>
+    <button id="files" disabled>파일 선택해 등록</button
+    ><button id="selection" disabled>Premiere 선택 소스 등록</button
+    ><button id="cancel" disabled>중지</button>
+    <p>
+      선택 소스는 원본 전체 파일로 등록됩니다. 현재는 분류 미리보기 단계입니다.
+    </p>
+    <div class="section">
+      <label
+        >파일·날짜·기기 검색<input
+          id="query"
+          type="text"
+          placeholder="파일명 또는 카메라 이름"
+      /></label>
+      <p id="count">저장된 파일 0개</p>
+      <textarea
+        id="results"
+        readonly
+        aria-label="파일 목록 및 분류 미리보기"
+      ></textarea>
+    </div>
+    <div class="section">
+      <p>촬영 정보 확인</p>
+      <label
+        >파일<select id="asset" aria-label="정보를 수정할 파일"></select></label
+      ><label
+        >촬영일<input id="date" type="text" placeholder="YYYY-MM-DD" /></label
+      ><label
+        >카메라·녹음기<input
+          id="device"
+          type="text"
+          placeholder="예: Camera A" /></label
+      ><button id="save" disabled>입력한 정보 확인·저장</button>
+      <p>
+        빈칸은 기존 정보를 유지합니다. 확인한 값은 재분석 후에도 보존됩니다.
+      </p>
+    </div>
+    <script src="main.js"></script>
+  </body>
+</html>

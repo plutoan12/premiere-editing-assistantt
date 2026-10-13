@@ -543,3 +543,17 @@ it("reports a content update once when duplicate requests share its result", asy
   expect(hashes).toBe(1);
   expect((await d.store.read()).assets[0].fileRevision).toBe(2);
 });
+it("reports a provider rejection during cancellation as cancelled", async () => {
+  const d = setup(),
+    controller = new AbortController();
+  d.probe.probe = async () => {
+    controller.abort();
+    throw new Error("process cancelled");
+  };
+  const result = await media.ingest([input()], d, {
+    signal: controller.signal,
+  });
+  expect(result.job.status).toBe("cancelled");
+  expect(result.items[0].state).toBe("cancelled");
+  expect((await d.store.read()).assets).toHaveLength(0);
+});
