@@ -1,0 +1,139 @@
+{
+  "verificationDate": "2026-10-08",
+  "timezone": "Asia/Seoul",
+  "premiereVersion": "26.5.2",
+  "platform": "macOS",
+  "sourceCommit": "ede9a2ef5265a885d5b4cc1f9256e3f068601d99",
+  "pluginId": "local.pea.graphics.preview",
+  "method": "Manual production-panel host replay; settings independently read through UXP Developer Tools. Component counts summarize the production inspector. Local project/sequence IDs omitted.",
+  "templates": [
+    {
+      "template": "Basic Lower Third",
+      "receipt": {
+        "status": "preview-created",
+        "decisionId": "manual-preview",
+        "graphicsApplied": false,
+        "unapplied": [
+          "caption-text",
+          "caption-style",
+          "emphasis",
+          "placement",
+          "template-properties"
+        ],
+        "items": [
+          {
+            "name": "그래픽",
+            "startTicks": "508540032000",
+            "endTicks": "762810048000"
+          }
+        ]
+      },
+      "frameTicks": "8475667200",
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "components": [
+        {
+          "matchName": "AE.ADBE Opacity",
+          "parameterCount": 3,
+          "valueTypeCounts": {
+            "number": 3
+          }
+        },
+        {
+          "matchName": "AE.ADBE Motion",
+          "parameterCount": 11,
+          "valueTypeCounts": {
+            "array": 2,
+            "number": 8,
+            "boolean": 1
+          }
+        },
+        {
+          "matchName": "AE.ADBE Graphic Group",
+          "parameterCount": 6,
+          "valueTypeCounts": {
+            "array": 2,
+            "number": 3,
+            "boolean": 1
+          }
+        },
+        {
+          "matchName": "AE.ADBE Text",
+          "parameterCount": 22,
+          "valueTypeCounts": {
+            "unavailable": 1,
+            "boolean": 8,
+            "array": 2,
+            "number": 11
+          }
+        },
+        {
+          "matchName": "AE.ADBE Text",
+          "parameterCount": 22,
+          "valueTypeCounts": {
+            "unavailable": 1,
+            "boolean": 8,
+            "array": 2,
+            "number": 11
+          }
+        }
+      ]
+    },
+    {
+      "template": "Gaming Lower Third Left (AE)",
+      "receipt": {
+        "status": "preview-created",
+        "decisionId": "manual-preview",
+        "graphicsApplied": false,
+        "unapplied": [
+          "caption-text",
+          "caption-style",
+          "emphasis",
+          "placement",
+          "template-properties"
+        ],
+        "items": [
+          {
+            "name": "게임 하단 1/3 왼쪽",
+            "startTicks": "508540032000",
+            "endTicks": "762810048000"
+          }
+        ]
+      },
+      "frameTicks": "8475667200",
+      "canvas": {
+        "width": 1920,
+        "height": 1080
+      },
+      "components": [
+        {
+          "matchName": "AE.ADBE Opacity",
+          "parameterCount": 3,
+          "valueTypeCounts": {
+            "number": 3
+          }
+        },
+        {
+          "matchName": "AE.ADBE Motion",
+          "parameterCount": 11,
+          "valueTypeCounts": {
+            "array": 2,
+            "number": 8,
+            "boolean": 1
+          }
+        },
+        {
+          "matchName": "AE.ADBE Capsule",
+          "parameterCount": 14,
+          "valueTypeCounts": {
+            "unavailable": 7,
+            "number": 2,
+            "host-object": 5
+          }
+        }
+      ]
+    }
+  ]
+}

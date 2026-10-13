@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "1.0.0",
+  "recordType": "manually-transcribed-native-ui-observations",
+  "date": "2026-10-13",
+  "host": {"name": "Adobe Premiere Pro (Beta)", "version": "27.1.0", "build": "27.1.0.13"},
+  "source": "Visible native Properties and program monitor, project close/reopen, UXP Developer Tools load status, and local file hashes",
+  "priorRecord": "2026-10-08-graphics-beta-text.json",
+  "productionCodeCommit": "0617e3224c7015e05c96634ba59cb776de2583eb",
+  "template": "Gaming Lower Third Left.mogrt",
+  "templateVersion": "bundled-unverified",
+  "sequenceLabel": "PEA Preview · host-value-probe",
+  "projectFiles": {
+    "source": {
+      "sha256BeforeAndAfter": "172a91f933213228625cde458c141f42f04fb9d33113c55b4a21a33fbcd379a6",
+      "bytes": 22407,
+      "modifiedUtc": "2026-10-08T10:29:14.036129Z",
+      "modifiedThisSession": false
+    },
+    "recoveryCopy": {
+      "localRelativePath": "dist/graphics-recovery-20261013/graphics-recovery-copy.prproj",
+      "initialSha256": "172a91f933213228625cde458c141f42f04fb9d33113c55b4a21a33fbcd379a6",
+      "savedSha256": "b1fa7074edbca340246d332d6e5385978f4a99dc598719d5cd7cddce7134b646",
+      "savedBytes": 22695,
+      "modifiedUtc": "2026-10-13T08:38:23.632387Z",
+      "published": false
+    }
+  },
+  "beforeNativeRepair": {
+    "undoAvailableAfterReopen": false,
+    "nativeTitle": {"text": "READY PLAYER 1?", "fontFamily": "Sarina", "fontStyle": "Regular"},
+    "nativeSubtitle": {"text": "Ready Set, Play!", "fontFamily": "Vox Round", "fontStyle": "Semibold"},
+    "programMonitor": {"observedTimecodes": ["00;00;02;05", "00;00;03;22"], "titleVisible": false, "subtitleVisible": true}
+  },
+  "nativeRepair": {
+    "operation": "Select all text in the native title field and paste the original READY PLAYER 1? text",
+    "fontControlsChanged": false,
+    "undoPerformed": false,
+    "sdkWritePerformed": false,
+    "programMonitorTimecode": "00;00;03;22",
+    "titleVisible": true,
+    "subtitleVisible": true,
+    "explicitlySavedCopy": true
+  },
+  "afterSaveCloseReopen": {
+    "programMonitorTimecode": "00;00;03;22",
+    "titleVisible": true,
+    "subtitleVisible": true,
+    "nativeTitle": {"text": "READY PLAYER 1?", "fontFamily": "Sarina", "fontStyle": "Regular"},
+    "nativeSubtitle": {"text": "Ready Set, Play!", "fontFamily": "Vox Round", "fontStyle": "Semibold"},
+    "sdkReadback": "not-obtained"
+  },
+  "verificationPanel": {
+    "id": "local.pea.graphics.beta.verify",
+    "state": "Not loaded",
+    "loadResult": "Plugin Load Failed",
+    "observedLog": ["Validate command successfull in App with ID premierepro v27.1.0", "Load command failed in App with ID premierepro v27.1.0", "Command execution failed in all connected applications."],
+    "underlyingCause": "not-established"
+  },
+  "productionWriteGate": false,
+  "graphicsApplied": false,
+  "nativeRecoveryStatus": "visible-in-saved-reopened-copy",
+  "unverified": ["SDK recovery readback", "final gate native replay", "successful SDK text write", "font writes", "SDK-write persistence", "edited caption pixel fidelity", "full caption layout"]
+}

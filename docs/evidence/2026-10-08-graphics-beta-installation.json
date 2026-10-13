@@ -1,0 +1,70 @@
+{
+  "apps": [
+    {
+      "app": "Adobe Premiere Pro (Beta).app",
+      "bundleId": "com.adobe.PremiereProBeta.27",
+      "version": "27.1.0",
+      "build": "27.1.0.7"
+    },
+    {
+      "app": "Adobe Premiere Pro 2026.app",
+      "bundleId": "com.adobe.PremierePro.26",
+      "version": "26.5.2",
+      "build": "26.5.2.5"
+    },
+    {
+      "app": "Adobe Media Encoder 2026.app",
+      "bundleId": "com.adobe.ame.application.26",
+      "version": "26.5.2",
+      "build": "26.5.2.2"
+    },
+    {
+      "app": "Adobe Media Encoder (Beta).app",
+      "bundleId": "com.adobe.amebeta.application.27",
+      "version": "27.1.0",
+      "build": "27.1.0.7"
+    }
+  ],
+  "panelFiles": {
+    "main.js": {
+      "matchesProductionBuild": true,
+      "sha256": "a25b906f4b4682b92a7fcc15a48de8f2a778a14bd0d32645865b2be58f9d4a0f"
+    },
+    "index.html": {
+      "matchesProductionBuild": true,
+      "sha256": "794c88d0d66cbdee73fb8ac89a490ada5e6a6bc8df3561a5a3c64718a1dabd30"
+    },
+    "uxp-mogrt.js": {
+      "matchesProductionBuild": true,
+      "sha256": "8055adba76338b0e839855271e81ba8298d59bcb140890068521c67563678699"
+    },
+    "uxp-mogrt-text.js": {
+      "matchesProductionBuild": true,
+      "sha256": "6dd2ffca9a65745f5bd686a1579e7cb224120e4494a76745027e87bc6888f76f"
+    }
+  },
+  "manifestOverrides": [
+    "id",
+    "name",
+    "host.minVersion",
+    "entrypoints[0].label.default"
+  ],
+  "verificationStatus": "host-text-tests-pending",
+  "date": "2026-10-08",
+  "source": "Adobe Creative Cloud desktop UI",
+  "productionCommit": "cec7c65be6b47bc4699cca3c70f60b03b8ec5365",
+  "betaPanelId": "local.pea.graphics.beta.verify",
+  "observed": [
+    "Premiere Beta launched",
+    "Isolated 27.x panel loaded in UXP Developer Tools",
+    "Panel detected MogrtText constructor",
+    "Native file picker loaded editable-text-draft JSON",
+    "Basic Lower Third selected and preview sequence appeared"
+  ],
+  "notYetVerified": [
+    "Text parameter inspection",
+    "Text/font transaction and readback",
+    "Wrapper identity compatibility",
+    "Visual edited text and undo"
+  ]
+}
