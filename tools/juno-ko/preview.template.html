@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Juno 한글 자막 미리보기</title>
+<style>
+:root{font-family:Arial,'Noto Sans CJK KR',sans-serif;color:#e9edf4;background:#101318;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0}main{max-width:1360px;margin:auto;padding:36px 28px}h1{font-size:30px;letter-spacing:-1px;margin:10px 0}h2{font-size:17px;margin:0 0 20px}p{line-height:1.65}.eyebrow{font-size:12px;letter-spacing:2px;color:#e6ca58}.sub{font-size:14px;color:#a6adbb;margin:0 0 28px}.badge{display:inline-block;padding:6px 10px;border:1px solid #544b26;border-radius:6px;color:#f5dd79;font-size:12px}.grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}.card{border:1px solid #303641;background:#1a1e25;border-radius:12px;padding:20px;min-width:0}.viewport{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#232b36;border-radius:8px}.frame{position:absolute;transform-origin:top left;background:radial-gradient(ellipse at 28% 28%,#52617a 0%,#253348 45%,#17202b 100%)}.frame-label{position:absolute;left:6%;top:6%;color:#d2dce8;font-size:26px;letter-spacing:4px}.scene-lines{position:absolute;inset:0;background:linear-gradient(90deg,transparent 49.9%,#ffffff06 50%,transparent 50.1%)}.safe{position:absolute;inset:8% 10%;border:2px dashed #e4eafa2c;display:flex;justify-content:center;align-items:flex-end;padding-bottom:10%}.caption{display:inline-flex;flex-direction:column;align-items:center;position:relative;padding:20px 24px;font-family:'Noto Sans CJK KR';font-weight:900;font-kerning:none;font-variant-ligatures:none;letter-spacing:0;line-height:1.25;color:#fff;animation:juno-pop .35s cubic-bezier(.22,1,.36,1) both;animation-play-state:paused;transform-origin:center}.line{display:block;white-space:pre;max-width:none}.word{display:inline;color:inherit;-webkit-text-stroke:.025em #101010;paint-order:stroke fill;text-shadow:.04em .04em 0 #101010,.08em .08em 0 #101010,.12em .12em 0 #101010}.word.active{color:var(--highlight,#ffdd00)}
+/* Pop-in and layered shadow adapted from francozanardi/tscaps Juno (MIT).
+   See THIRD_PARTY_NOTICES.txt. This is a browser approximation, not a MOGRT. */
+@keyframes juno-pop{0%{transform:scale(1)}40%{transform:scale(1.1)}100%{transform:scale(1)}}
+.caption[hidden]{display:none}.overflow-message{position:absolute;inset:40% 8% auto;text-align:center;font-size:40px;color:#ffdaa3}.overflow-message[hidden]{display:none}.meta{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap;color:#a6adbb;font-size:12px;margin:14px 0}#status{font-weight:700;color:#b8e6ba}#status[data-state=overflow],#status[data-state=error]{color:#ffc190}.transport{display:flex;align-items:center;gap:14px;margin-top:16px}.transport input{flex:1;min-width:0}label{display:block;font-size:13px;color:#cad0da;margin:16px 0 8px}input,textarea,select,button{font:inherit}input:not([type=range]),select,textarea{width:100%;background:#11151b;color:#edf0f5;border:1px solid #414956;border-radius:6px;padding:10px;min-width:0}textarea{height:112px;resize:vertical;font-size:16px;line-height:1.65}button{background:#e5cc68;border:0;border-radius:6px;padding:10px 14px;color:#111;font-weight:700;cursor:pointer;white-space:normal}button:disabled{opacity:.35;cursor:not-allowed}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}.small{font-size:12px;color:#a7afbc;line-height:1.65}.note{margin-top:20px;padding:16px;border-left:3px solid #d8bc55;background:#24251e;font-size:13px;line-height:1.75}.binding{margin-top:20px}.binding summary{cursor:pointer;font-weight:700;font-size:14px}.wide{width:100%;margin-top:16px}#draft-status{overflow-wrap:anywhere}footer{margin-top:24px;font-size:12px;color:#8893a4;line-height:1.7}a{color:#e6ca58}input[type=range]{accent-color:#e5cc68}
+@media(max-width:850px){main{padding:22px 16px}.grid{grid-template-columns:1fr}.card{padding:14px}h1{font-size:25px}.sub{margin-bottom:18px}}
+@media(prefers-reduced-motion:reduce){.caption{animation:none}}
+</style></head>
+<body><main>
+<div class="eyebrow">CAPTION LAB / 01</div><h1>Juno 한글 자막 미리보기</h1>
+<p class="sub">한글 줄바꿈과 강조 효과를 먼저 확인하는 브라우저 테스트. 영상이나 글꼴을 업로드하지 않아.</p>
+<div class="grid"><section class="card" aria-label="미리보기">
+<div class="viewport" id="viewport"><div class="frame" id="frame"><div class="scene-lines"></div><div class="frame-label">JUNO / KOREAN PREVIEW</div><div class="safe" id="safe"><div class="caption" id="caption"></div></div><div class="overflow-message" id="overflow-message" hidden></div></div></div>
+<div class="meta"><span id="status" role="status" aria-live="polite"></span><span id="dimensions"></span></div>
+<div class="transport"><button id="play" type="button">데모 재생</button><input id="seek" aria-label="데모 시간" type="range" min="0" max="3.99" step="0.01" value="0"><span id="clock">0.00초</span></div>
+<p class="small">강조 타이밍은 4초짜리 시연용이야. 실제 음성 인식·단어별 싱크 결과가 아니야. 점선은 표시 안전영역이야.</p>
+<div class="note"><strong>Premiere 적용 안 됨</strong><br>이 화면은 CSS 미리보기이며, 편집 가능한 .mogrt 파일이나 영상 렌더러가 아니야. 기존 프리미어 텍스트 쓰기 잠금은 그대로 유지돼.</div>
+</section><aside class="card"><h2>한 종류부터 정확하게</h2>
+<label for="caption-input">자막 문구 · 직접 줄바꿈 가능</label><textarea id="caption-input" maxlength="3000" spellcheck="false">말보다 중요한 건
+타이밍이야 👩🏽‍💻</textarea>
+<div class="pair"><div><label for="orientation">화면 비율</label><select id="orientation"><option value="landscape">가로 16:9</option><option value="portrait">세로 9:16</option></select></div><div><label for="highlight">강조색</label><select id="highlight"><option value="#ffdd00">옐로</option><option value="#00e5ff">시안</option><option value="#ff4fa3">핑크</option></select></div></div>
+<label for="font">요청 글꼴</label><select id="font"><option>Noto Sans CJK KR</option><option>Apple SD Gothic Neo</option><option>Malgun Gothic</option><option>NanumSquare</option></select>
+<p class="small">선택한 글꼴이 없으면 기기의 다른 글꼴로 보일 수 있어. 글꼴 파일은 포함하지 않았어.</p>
+<label for="size">글자 크기 <output id="size-value">56</output></label><input id="size" type="range" min="36" max="96" step="1" value="56" style="width:100%">
+<details class="binding"><summary>프리미어 문구 테스트 준비</summary><p class="small">실제로 보유한 템플릿의 ID·버전·경로를 입력해야 해. 내보내는 JSON은 원본 템플릿 미리보기와 문구 검사 준비용이며, Juno 디자인을 MOGRT로 변환하지 않아.</p>
+<label for="template-id">실제 템플릿 ID</label><input id="template-id" placeholder="보유한 템플릿의 ID" autocomplete="off">
+<label for="template-version">확인한 템플릿 버전</label><input id="template-version" placeholder="실제 버전" autocomplete="off">
+<label for="template-path">실제 .mogrt 절대경로</label><input id="template-path" placeholder="맥 또는 Windows의 실제 파일 경로" autocomplete="off">
+<p class="small">30,000/1,001fps · 60프레임 시작 · 90프레임 길이. 파일 존재와 버전은 프리미어에서 다시 확인해야 해.</p><button type="button" class="wide" id="export" disabled>문구 테스트 JSON 저장</button><p id="draft-status" class="small"></p></details>
+</aside></div><footer>Juno 효과 참고: francozanardi/tscaps · MIT License · Copyright (c) 2026 Franco Zanardi.<br>검증 범위: 브라우저 텍스트 레이아웃. 실제 Premiere·Safari·영상 출력은 별도 검증 대상이야.</footer>
+</main>
+<script type="module">
+/*__PRESET_MODULE__*/
+const $ = id => document.getElementById(id);
+const canvas = document.createElement('canvas'), context = canvas.getContext('2d');
+let current = null, currentDraft = null, words = [], playing = false, startedAt = 0, selectedTime = 0;
+let dimensions = {width:1920,height:1080};
+function resize() { $('frame').style.transform = `scale(${$('viewport').clientWidth / dimensions.width})`; }
+function paintTime(time) {
+  selectedTime = time; $('seek').value = String(time); $('clock').textContent = `${time.toFixed(2)}초`;
+  $('caption').style.animationDelay = `-${time}s`;
+  const index = Math.min(words.length - 1, Math.floor(time / 4 * words.length));
+  words.forEach((word, i) => word.classList.toggle('active', i === index));
+}
+function refreshDraft() {
+  currentDraft = null;
+  try {
+    if (!current || current.status !== 'ready') throw Error('자막의 줄 수와 문구를 먼저 확인해줘.');
+    currentDraft = buildTextDraft(current.text, {
+      templateId: $('template-id').value, templateVersion: $('template-version').value, templatePath: $('template-path').value,
+    }, {...dimensions, fpsNumerator:30000,fpsDenominator:1001,startFrame:60,durationFrames:90});
+    $('draft-status').textContent = '문구 테스트 JSON만 생성 가능. 파일 존재 확인·MOGRT 디자인 변환·쓰기 잠금 해제는 하지 않아.';
+  } catch { $('draft-status').textContent = '표시 가능한 자막과 실제 템플릿 ID·버전·절대경로가 모두 필요해.'; }
+  $('export').disabled = !currentDraft;
+}
+function render() {
+  try {
+    const portrait = $('orientation').value === 'portrait';
+    dimensions = portrait ? {width:1080,height:1920} : {width:1920,height:1080};
+    $('viewport').style.aspectRatio = `${dimensions.width}/${dimensions.height}`;
+    // Keep portrait previews manageable on desktop without changing output dimensions.
+    $('viewport').style.maxWidth = portrait ? '420px' : 'none';
+    $('viewport').style.marginInline = 'auto';
+    Object.assign($('frame').style,{width:`${dimensions.width}px`,height:`${dimensions.height}px`});
+    const font = $('font').value, size = Number($('size').value);
+    $('size-value').textContent = String(size);
+    context.font = `900 ${size}px "${font}",sans-serif`; context.fontKerning = 'none';
+    const budget = dimensions.width * .8 / preset.popScale - 2 * (24 + size * .15);
+    current = layoutCaption($('caption-input').value, text => context.measureText(text).width, budget, preset.maxLines);
+    Object.assign($('caption').style,{fontFamily:`"${font}",sans-serif`,fontSize:`${size}px`});
+    $('caption').style.setProperty('--highlight',$('highlight').value);
+    $('caption').replaceChildren(); words = [];
+    for (const line of current.lines) {
+      const el = document.createElement('span'); el.className = 'line';
+      for (const token of line.text.match(/\s+|\S+/gu) ?? ['']) {
+        const span = document.createElement('span'); span.textContent = token;
+        if (/\S/u.test(token)) {span.className='word';words.push(span);}
+        el.append(span);
+      }
+      if (!line.text) el.textContent='\u200b';
+      $('caption').append(el);
+    }
+    const ready = current.status === 'ready';
+    $('caption').hidden = !ready; $('overflow-message').hidden = ready;
+    $('overflow-message').textContent = '문구가 길어 · 문장을 나눠줘';
+    $('status').dataset.state = current.status;
+    $('status').textContent = ready ? `${current.lines.length}줄 · 레이아웃 계산 통과` : `${current.lines.length}줄 필요 · 두 줄 초과 또는 글자 폭 초과`;
+    $('dimensions').textContent = `${dimensions.width} × ${dimensions.height} / 29.97fps 테스트 계획`;
+    paintTime(selectedTime); resize(); refreshDraft();
+  } catch (error) {
+    current = null; currentDraft = null; words = [];
+    $('caption').hidden=true; $('overflow-message').hidden=true;
+    $('status').dataset.state='error';$('status').textContent=`문구를 확인해줘: ${error.message}`;
+    refreshDraft();
+  }
+}
+for (const id of ['caption-input','orientation','highlight','font','size']) $(id).addEventListener('input',render);
+for (const id of ['template-id','template-version','template-path']) $(id).addEventListener('input',refreshDraft);
+$('seek').addEventListener('input',() => { playing=false; $('play').textContent='데모 재생';paintTime(Number($('seek').value)); });
+$('play').addEventListener('click',() => {playing=!playing;startedAt=performance.now()-selectedTime*1000;$('play').textContent=playing?'일시 정지':'데모 재생';});
+function tick(now) {if(playing)paintTime(((now-startedAt)/1000)%4);requestAnimationFrame(tick);}
+$('export').addEventListener('click',() => {
+  refreshDraft(); if(!currentDraft)return;
+  const url=URL.createObjectURL(new Blob([JSON.stringify(currentDraft,null,2)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download='juno-ko-text-probe.json';document.body.append(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+});
+new ResizeObserver(resize).observe($('viewport'));
+await document.fonts.ready; render();document.body.dataset.ready='true';requestAnimationFrame(tick);
+</script></body></html>
