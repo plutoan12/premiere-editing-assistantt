@@ -285,3 +285,35 @@ it("blocks interrupted rescans until content is verified again and preserves use
     true,
   );
 });
+it("verifies the reviewed source bytes without revising the catalog and blocks replacements", async () => {
+  const { post, dir } = await fixture(),
+    path = join(dir, "source.mov");
+  await writeFile(path, "original bytes");
+  const state = importCatalog(
+    ((await (await post("/ingest", { paths: [path] })).json()) as any).catalog,
+  );
+  const input = {
+    revision: state.revision,
+    sources: [{ assetId: state.assets[0].asset.id, path }],
+  };
+  expect((await post("/verify-sources", input)).status).toBe(200);
+  expect(
+    (await post("/verify-sources", { ...input, revision: state.revision - 1 }))
+      .status,
+  ).toBe(409);
+  await writeFile(path, "different bytes");
+  expect((await post("/verify-sources", input)).status).toBe(409);
+  expect(
+    (
+      await post("/verify-sources", {
+        ...input,
+        sources: [
+          {
+            assetId: state.assets[0].asset.id,
+            path: join(dir, "unregistered.mov"),
+          },
+        ],
+      })
+    ).status,
+  ).toBe(409);
+});
