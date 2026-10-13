@@ -1,0 +1,16 @@
+body { padding: 14px; color: #e5e5e5; background-color: #252525; font-size: 12px; }
+#app { display: flex; flex-direction: column; }
+h2 { font-size: 20px; margin-bottom: 10px; }
+p { line-height: 1.5; margin: 8px 0; }
+.muted { color: #a8a8a8; font-size: 11px; }
+.note { color: #bcbcbc; padding: 8px; background-color: #303030; border-radius: 4px; }
+sp-button { margin: 6px 0; }
+sp-dropdown, sp-textfield { width: 100%; margin-bottom: 6px; }
+sp-label { margin-top: 7px; }
+.row { display: flex; flex-direction: row; align-items: center; }
+.field { flex: 1; margin-right: 8px; }
+.row sp-button { margin-right: 8px; }
+#status { padding: 10px 0; font-weight: bold; }
+#results p { padding: 7px; background-color: #303030; }
+pre { white-space: pre-wrap; font-size: 11px; line-height: 1.5; }
+sp-checkbox { margin: 10px 0; }

@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="style.css"></head>
+<body>
+  <div id="app">
+    <h2>PEA Sync <span class="muted">LOCAL · 0.2.0</span></h2>
+    <p class="note">테스트 프로젝트 복사본에서 사용해. 원본 파일이나 기존 편집 시퀀스는 변경하지 않아.</p>
+    <sp-button id="connect" variant="secondary">1. Helper 세션 폴더 연결</sp-button>
+    <p class="muted">먼저 start-helper.command를 실행하고, 터미널에 표시된 session 폴더를 선택해.</p>
+    <sp-button id="selection" variant="secondary">2. Premiere 선택 클립 읽기</sp-button>
+    <p id="selection-info">기준 시퀀스를 열고 프로젝트 패널에서 원본 클립 2~16개를 선택해.</p>
+    <sp-label>기준 음원 / 카메라</sp-label>
+    <sp-dropdown id="reference" placeholder="기준 클립 선택"><sp-menu id="reference-options" slot="options"></sp-menu></sp-dropdown>
+    <sp-label>분석 방식</sp-label>
+    <sp-dropdown id="mode"><sp-menu slot="options"><sp-menu-item selected>오디오 싱크</sp-menu-item><sp-menu-item>플레이백 / 마스터 음원</sp-menu-item></sp-menu></sp-dropdown>
+    <div class="row"><div class="field"><sp-label>분석 시작 (초)</sp-label><sp-textfield id="start" type="number" value="0"></sp-textfield></div>
+      <div class="field"><sp-label>분석 길이 (초, 최대 32)</sp-label><sp-textfield id="duration" type="number" value="8"></sp-textfield></div></div>
+    <p class="muted">분석용 8 kHz 모노 변환. 선택한 구간에 공통 소리가 있어야 해. 장시간 드리프트는 보정하지 않아.</p>
+    <div class="row"><sp-button id="analyze" variant="primary" disabled>3. 싱크 분석</sp-button><sp-button id="cancel" variant="secondary" disabled>취소</sp-button></div>
+    <p id="status" role="status">Premiere 런타임 연결 중…</p>
+    <div id="results"></div>
+    <sp-label>새 Sync 시퀀스 이름</sp-label><sp-textfield id="sequence-name" value="PEA Sync Test"></sp-textfield>
+    <sp-button id="dry-run" variant="secondary" disabled>4. Dry Run 미리보기</sp-button>
+    <pre id="plan"></pre>
+    <sp-checkbox id="test-copy">별도 저장한 테스트 프로젝트 복사본임을 확인했어.</sp-checkbox>
+    <sp-button id="apply" variant="cta" disabled>5. 승인한 배치 Apply</sp-button>
+    <sp-button id="export-report" variant="secondary" disabled>검증 결과 저장</sp-button>
+    <p class="note">Apply는 새 시퀀스를 만들어 클립을 배치해. 실패 시 자동 롤백을 약속하지 않아. 결과 시퀀스를 직접 재생해서 확인해.</p>
+  </div>
+  <script src="main.js"></script>
+</body></html>
