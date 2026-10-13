@@ -135,9 +135,15 @@ live object references: if the SDK returns fresh wrappers, it blocks with
 do not substitute project-asset identity for clip-instance identity. Keep any uncertain
 write for review rather than retrying it. The 27.1.0.7 run reached native plan selection,
 preview, typed AE inspection and failed text write/readback. Korean and ASCII probes
-both failed. Two manual Undo checks restored original title/font/size; the last ASCII
-probe still needs Undo after Mac unlock. Font writes, edited appearance, persistence
-and the remaining negative host checks have not passed. No successful text write is claimed.
+both failed. Two manual Undo checks restored original title/font/size. The last ASCII
+diagnostic was later recovered in a separate project copy on 27.1.0.13: native Properties
+showed the original text while its title was missing from the monitor; re-entering the
+original title through the native field restored it, including after save/reopen.
+Undo history was unavailable. SDK recovery readback and the final gate's native replay
+remain blocked by verification-panel load failure. This native recovery does not prove
+SDK write compatibility. Font writes, edited caption fidelity, SDK-write persistence
+and remaining negative host checks have not passed. See the
+[recovery record](../../docs/evidence/2026-10-13-graphics-beta-recovery.json).
 
 API evidence: [Adobe's MogrtText/ComponentParam declarations](https://github.com/adobe/premierepro-types/blob/c8f108941197c1d987f08b9916c0d18a2e252699/src/premierepro.d.ts),
 [version boundary and implementation notes](../../docs/graphics-caption-rendering.md).

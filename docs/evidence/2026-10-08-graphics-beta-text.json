@@ -40,5 +40,6 @@
   "productionWriteGate": false,
   "gateVerification": "automated panel tests; native replay pending Mac unlock",
   "projectAutoSaved": false,
-  "unverified": ["successful text write", "font writes", "edited visual fidelity", "save/reopen persistence", "full caption layout", "final ASCII diagnostic recovery"]
+  "unverified": ["successful text write", "font writes", "edited visual fidelity", "save/reopen persistence", "full caption layout", "final ASCII diagnostic recovery"],
+  "subsequentRecoveryRecord": "2026-10-13-graphics-beta-recovery.json"
 }

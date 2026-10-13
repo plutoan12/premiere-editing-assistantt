@@ -1,8 +1,10 @@
 # Graphics Engine verification — 2026-10-03
 
-This is a chronological record. Latest status: Premiere Beta **27.1.0.7** reads AE
-template text, but **text writes fail readback with an unsupported encoding error**.
-Panel writes are disabled; original preview and typed text inspection remain available.
+This is a chronological record. Latest status: the last diagnostic's missing title
+was restored through native Premiere controls in a separate project copy on Beta
+**27.1.0.13**, then verified visually after saving and reopening. SDK recovery readback
+and the final gate's native replay are blocked by verification-panel load failure.
+Panel writes remain disabled after **27.1.0.7** text writes failed SDK readback.
 The editable text step has automated coverage. The preceding original
 preview panel passed the [Premiere 26.5.2 replay](#final-production-panel-replay--2026-10-08).
 Earlier unrun/blocked statements describe the state at those earlier checkpoints.
@@ -349,3 +351,44 @@ typechecks, structural assignment against the inspected Adobe declarations, pane
 source/built-module syntax and `git diff --check` all passed. No new dependencies were
 installed. The six added tests cover nullable project-item binding and production
 write blocking, including direct invocation of a disabled button's event handler.
+
+## Diagnostic recovery in a project copy — 2026-10-13
+
+After the user resumed work, the installed Beta bundle reported **27.1.0.13**.
+This session did not install that update. Adobe UI use was coordinated with Media
+Organizer; its screen hold was released after the checks below.
+
+The saved Graphics test project was copied byte-for-byte to an ignored recovery
+directory before opening it. The source file's SHA-256 remained unchanged throughout
+the session. Only the copy was edited and explicitly saved; other open projects were
+not edited or saved. Local project binaries and Adobe templates are not published.
+
+- Reopening the copy left no Undo history. No final ASCII Undo was performed.
+- In `PEA Preview · host-value-probe`, native Properties already showed title
+  `READY PLAYER 1?` (Sarina / Regular) and subtitle `Ready Set, Play!`
+  (Vox Round / Semibold). Despite that, the title was absent from the program monitor
+  at both `00;00;02;05` and `00;00;03;22`; the subtitle remained visible.
+- Selecting the title's native text field and replacing its contents with the same
+  original text restored the visible title at `00;00;03;22`. This was a manual native
+  edit, not an SDK write or an Undo. No font control was changed.
+- The copy was explicitly saved, closed and reopened. Both title and subtitle remained
+  visible at `00;00;03;22`. Reselecting the clip showed the same native text and font
+  family/style values. This verifies the recovery copy's visible saved state, not
+  pixel fidelity or the persistence of a successful SDK text write.
+- `local.pea.graphics.beta.verify` remained **Not loaded** in UXP Developer Tools.
+  Loading it reported **Plugin Load Failed**; the observed log reported successful
+  validation for Premiere 27.1.0 followed by failed load commands. The underlying load
+  failure cause was not established. Consequently, no SDK text/font readback and no
+  native replay of the final production gate were obtained on 27.1.0.13.
+
+The [normalized recovery record](evidence/2026-10-13-graphics-beta-recovery.json)
+contains manually transcribed UI observations and file hashes, not a raw panel receipt.
+The original saved project is preserved as pre-recovery evidence; use the separate
+recovery copy for the restored visual state. Recovery does not establish compatibility
+for automatic caption edits, so `MOGRT_TEXT_WRITE_VERIFIED` stays false. No additional
+experimental writes were attempted. SDK recovery, font writes, edited caption fidelity
+and full planned rendering remain unverified.
+
+This follow-up changes evidence and documentation only. The production implementation
+at `0617e32` passed **182 tests / 22 files**, the local checks recorded above, and
+[GitHub PR CI](https://github.com/plutoan12/premiere-editing-assistantt/actions/runs/37661906437).

@@ -4,12 +4,15 @@ The user requested the next step after the original-template preview passed live
 verification: apply caption text, styling and placement in Premiere. The current
 preview remains usable; its `graphicsApplied:false` result is still accurate.
 
-Latest environment update: the user subsequently approved Premiere Beta installation.
-**27.1.0.7** is now installed alongside 26.5.2.5. AE title/subtitle inspection succeeds,
-but text transactions cause an unsupported MogrtText encoding error on readback.
-**Panel writes are disabled**; original previews and typed text inspection remain usable.
-Basic Lower Third still returns null source-text values. See the
-[beta text verification record](graphics-engine-verification.md#beta-text-verification-and-write-gate--2026-10-08).
+The user subsequently approved Premiere Beta installation. On **27.1.0.7**, AE
+title/subtitle inspection succeeded, but text transactions caused an unsupported
+MogrtText encoding error on readback. **Panel writes are disabled**. Basic Lower Third
+returned null source-text values. On October 13 the installed Beta reported **27.1.0.13**;
+native controls restored the last diagnostic's missing title in a separate project copy,
+including after save/reopen. The verification panel failed to load, so SDK recovery
+readback and the final gate's native replay remain unverified on that build. See the
+[beta text verification](graphics-engine-verification.md#beta-text-verification-and-write-gate--2026-10-08)
+and [recovery record](graphics-engine-verification.md#diagnostic-recovery-in-a-project-copy--2026-10-13).
 The compatibility investigation below describes the earlier 26.5.2 environment.
 
 ## Confirmed compatibility boundary
