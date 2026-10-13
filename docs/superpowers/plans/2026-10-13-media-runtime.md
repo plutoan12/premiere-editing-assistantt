@@ -8,7 +8,7 @@ The user approved proceeding after PR #17. Its existing engine design remains th
 - [x] Add a loopback helper with a per-session bearer token, bounded inputs, serialized scans, cancellation, and an owner-only connection file. Support explicit files, never recursive or automatic project mutation.
 - [x] Add a small Premiere UXP panel: connect, choose files/read selected source paths, register, search, classification preview, and restore from SQLite. Use existing engine search in the UXP bundle.
 - [x] Test real generated media, restart/CAS/failure handling, and host panel loading. Record actual host results separately from automated tests.
-- [ ] Review, push a new branch, and create a PR against `feat/core-contracts`.
+- [x] Review, push a new branch, and create [PR #19](https://github.com/plutoan12/premiere-editing-assistantt/pull/19) against `feat/core-contracts`.
 
 ## Decisions and reuse
 
@@ -24,3 +24,5 @@ Implementation and exact results are recorded below as work completes.
 - Storage/provider tests failed before implementation, then passed. HTTP registration/cancellation/date tests caught input identity reuse and provider-abort result issues; both were corrected with regressions. Full suite: 172 tests passed; full typecheck passed. UXP browser build and actual host register/search/edit/preview passed.
 
 - Final review: three P2 findings fixed with RED→GREEN regressions: interrupted rescan validation, attached artwork media kind, and cached preview rows. Final suite 175/175. No deferred minors. Final validation details are in the runtime research report.
+
+- CI caught a slow assertion: generic deep equality over a 3 MiB Buffer exceeded the Linux runner's 5-second test timeout. Native `Buffer.equals` preserves exact byte comparison without walking millions of object properties; the timeout was not increased.

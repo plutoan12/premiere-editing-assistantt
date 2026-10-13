@@ -77,7 +77,8 @@ describe("source providers", () => {
     expect(await files.sha256(uri)).toBe(
       createHash("sha256").update(bytes).digest("hex"),
     );
-    expect(await readFile(path)).toEqual(bytes);
+    // Compare every byte natively; deep object equality walks millions of keys.
+    expect((await readFile(path)).equals(bytes)).toBe(true);
     await expect(
       files.sha256(uri, { signal: AbortSignal.abort() }),
     ).rejects.toThrow();
