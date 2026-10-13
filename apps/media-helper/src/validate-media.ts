@@ -123,6 +123,55 @@ try {
   assert.equal(failure.result.items[0].state, "failed");
   assert.equal(importCatalog(failure.catalog).assets.length, 20);
   assert.deepEqual(await Promise.all(paths.map(digest)), before);
+  const cover = join(root, "cover.jpg"),
+    song = join(root, "album.mp3");
+  await runProcess(
+    ffmpeg,
+    [
+      "-v",
+      "error",
+      "-n",
+      "-f",
+      "lavfi",
+      "-i",
+      "color=red:size=64x64",
+      "-frames:v",
+      "1",
+      cover,
+    ],
+    { timeoutMs: 30000 },
+  );
+  await runProcess(
+    ffmpeg,
+    [
+      "-v",
+      "error",
+      "-n",
+      "-i",
+      paths[10],
+      "-i",
+      cover,
+      "-map",
+      "0:a",
+      "-map",
+      "1:v",
+      "-c:a",
+      "libmp3lame",
+      "-c:v",
+      "copy",
+      "-disposition:v:0",
+      "attached_pic",
+      song,
+    ],
+    { timeoutMs: 30000 },
+  );
+  const songHash = await digest(song),
+    music = await call("/ingest", { paths: [song] });
+  const musicAsset = importCatalog(music.catalog).assets.find(
+    (a) => a.asset.id === music.result.items[0].assetId,
+  );
+  assert.equal(musicAsset?.probe?.mediaKind, "audio");
+  assert.equal(await digest(song), songHash);
   await writeFile(
     join(root, "report.json"),
     JSON.stringify(
@@ -138,6 +187,7 @@ try {
         search: true,
         classification: result.pathSegments,
         corruptRejected: true,
+        attachedArtworkClassifiedAudio: true,
         sourceHashesUnchanged: true,
       },
       null,

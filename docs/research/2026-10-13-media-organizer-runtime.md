@@ -10,7 +10,7 @@ This milestone adds real file providers, a SQLite catalog, a local helper and a 
 
 Environment: macOS arm64, Apple M3 Max, Node 24.18.1, Premiere Pro 26.5.2, UXP Developer Tools 2.3.0. Existing local FFmpeg/ffprobe n4.4.1 binaries from the Sync worktree were used; no binary is committed or redistributed.
 
-- Automated real-media workflow: 10 generated H.264 MOVs + 10 generated PCM WAVs, each 0.4 seconds. All 20 registered. Reopening SQLite preserved IDs, user-confirmed device and catalog contents. Rescanning returned 20 unchanged results. `Camera A` search and `Media Organizer / 2026-10-13 / Camera A / Video` classification passed. A corrupt MOV failed without creating an asset. Every original SHA-256 was unchanged afterward. Local artifact: `build/media-runtime-validation/report.json`.
+- Automated real-media workflow: 10 generated H.264 MOVs + 10 generated PCM WAVs, each 0.4 seconds. All 20 registered. Reopening SQLite preserved IDs, user-confirmed device and catalog contents. Rescanning returned 20 unchanged results. `Camera A` search and `Media Organizer / 2026-10-13 / Camera A / Video` classification passed. A corrupt MOV failed without creating an asset. Every original SHA-256 was unchanged afterward. Final local artifact: `build/media-runtime-validation-final/report.json`. A separate generated MP3 with attached JPEG cover artwork was also registered as audio, with its source hash unchanged.
 - Actual Premiere panel: loaded `local.pea.media.organizer.dev` through UXP Developer Tools. Selected its local connection file; empty catalog restoration succeeded. Selected the same 20 files in the native picker; UI showed **등록 20개**, saved 20, search 20, revision 43.
 - Actual UXP search: typing `01` reduced the 20 saved files to **샘플_01.mov**. Its date was `2026-10-13`, device missing.
 - Actual metadata/preview: selected **샘플_01.mov**, entered `Camera A`, and saved. UI displayed **Media Organizer / 2026-10-13 / Camera A / Video**, **분류 준비됨**. These observations confirm Core/Zod/MiniSearch/BigInt catalog import in the host, not just a browser build.
@@ -25,6 +25,17 @@ Primary API references: [Node SQLite](https://nodejs.org/docs/latest-v24.x/api/s
 
 ## Limits and next gate
 
-No actual project/Bin/timeline/source mutation was performed. Save As/reopen host identity stability and selected source extraction on a fixture project remain unmeasured. Automated helper restart is separate from a full Premiere restart test. CFR/VFR qualification, long/large real camera files, disk-full/permission failures, schema migrations, backups and installers remain unverified. A hard-killed CLI leaves a stale connection file; the documented recovery requires confirming the old helper is stopped and removing only that file.
+No actual project/Bin/timeline/source mutation was performed. Save As/reopen host identity stability and selected source extraction on a fixture project remain unmeasured. Helper stop/start plus UXP panel reload/reconnection restored the 20 files and saved Camera A classification in Premiere; a full Premiere application restart remains untested. CFR/VFR qualification, long/large real camera files, disk-full/permission failures, schema migrations, backups and installers remain unverified. A hard-killed CLI leaves a stale connection file; the documented recovery requires confirming the old helper is stopped and removing only that file.
 
 The next implementation gate is a reviewed Premiere adapter with stable item bindings, owned Bin tracking, stale-plan rejection, actual apply/readback, repeat-run idempotence and Undo on an isolated fixture project. Preview success does not authorize or imply those writes.
+
+
+## Final review and checks
+
+One independent read-only branch review found three P2 issues. All were fixed with failing-then-passing regressions in one repair pass:
+
+1. Interrupted rescans now fail their running scan records, discard their resumable analysis-cache references, and mark associated sources unverified. A real byte replacement followed by simulated interrupted state and reopen is blocked from plans; retry updates content while preserving ID, prior artifact until success, and user edits.
+2. ffprobe `disposition.attached_pic` video streams are excluded from primary video selection, keeping music with embedded cover artwork in Audio. Confirmed by both normalized-data regression and a generated MP3/JPEG file.
+3. Preview plans are computed once per accepted catalog, and query rendering selects prepared rows. The prior per-hit plan rebuilding took about 2,982ms for 500 minimal files in the review reproduction. The committed benchmark measured preparation mean 30.0572ms (10 samples); query/search/result-string formatting mean 1.1245ms, p99 1.3487ms (200 samples). These are Node measurements, excluding UXP DOM painting, not claimed Premiere UI timings. Run `pnpm --filter @pea/media-panel exec vitest bench --run src/preview.bench.ts`.
+
+Final automated suite: 175 tests (Core 26, Sync 51, Media 77, helper 17, panel 4); full typecheck and UXP bundle build pass. No minor review findings were deferred.

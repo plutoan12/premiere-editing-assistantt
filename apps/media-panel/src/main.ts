@@ -2,13 +2,12 @@ import {
   importCatalog,
   createSearchIndex,
   defaultRuleSet,
-  classify,
-  buildOrganizationPlan,
   effectiveMetadata,
   filenameFromUri,
   validDate,
   type CatalogState,
 } from "@pea/media-organizer";
+import { preparePreview, type PreviewRow } from "./preview.js";
 import { selectedSourcePaths, type Premiere } from "./premiere.js";
 declare const require: (name: string) => any;
 const fs = require("uxp").storage.localFileSystem,
@@ -21,6 +20,7 @@ const status = el("status"),
 let connection: { baseUrl: string; token: string } | undefined,
   state: CatalogState | undefined,
   busy = false;
+let preview = new Map<string, PreviewRow>();
 const index = createSearchIndex(),
   rules = defaultRuleSet("d476751f-1b86-46e0-b5b2-0ba7b07fa4c1");
 function buttons() {
@@ -64,22 +64,13 @@ function render() {
   for (const hit of hits) {
     if (seen.has(hit.mediaAssetId)) continue;
     seen.add(hit.mediaAssetId);
-    const asset = state.assets.find((a) => a.asset.id === hit.mediaAssetId)!,
-      target = { kind: "asset" as const, id: asset.asset.id },
-      classification = classify(target, state, rules),
-      plan = buildOrganizationPlan(
-        state,
-        [target],
-        rules,
-        [],
-        () => "9e89524c-01b8-4375-aad1-b28f3a8785bb",
-      );
+    const row = preview.get(hit.mediaAssetId)!;
     lines.push(
-      filenameFromUri(asset.asset.uri),
-      classification.pathSegments.join(" / "),
-      plan.issues.length
+      row.filename,
+      row.pathSegments.join(" / "),
+      row.issues.length
         ? "확인 필요: " +
-            plan.issues
+            row.issues
               .map(
                 (i) =>
                   ({
@@ -90,11 +81,11 @@ function render() {
                     availability_unknown: "파일 위치 확인",
                     source_unverified: "파일 재분석",
                     source_changed: "변경된 구간 확인",
-                  })[i.code] ?? "정보 확인",
+                  })[i] ?? "정보 확인",
               )
               .join(", ")
         : "분류 준비됨",
-      asset.asset.uri,
+      row.uri,
       "",
     );
   }
@@ -105,6 +96,7 @@ function render() {
 async function accept(catalog: string) {
   state = importCatalog(catalog);
   await index.rebuild(state);
+  preview = preparePreview(state, rules);
   const chosen = assetSelect.value;
   while (assetSelect.firstChild)
     assetSelect.removeChild(assetSelect.firstChild);

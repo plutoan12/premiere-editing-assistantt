@@ -155,3 +155,24 @@ it("SQLite rolls back an interrupted transaction and retains the previous commit
     reopened.close();
   }
 });
+it("classifies audio with attached cover artwork as audio", () => {
+  const result = normalizeProbe(
+    {
+      format: { duration: "2.0", format_name: "mp3" },
+      streams: [
+        { codec_type: "audio", channels: 2 },
+        {
+          codec_type: "video",
+          width: 500,
+          height: 500,
+          disposition: { attached_pic: 1 },
+          avg_frame_rate: "90000/1",
+        },
+      ],
+    },
+    "test",
+  );
+  expect(result.mediaKind).toBe("audio");
+  expect(result.frameRate).toBeUndefined();
+  expect(result.width).toBeUndefined();
+});

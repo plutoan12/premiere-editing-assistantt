@@ -90,6 +90,26 @@ export async function createMediaServer(options: MediaServerOptions) {
         "INTERRUPTED: Local engine stopped before this job completed";
       recovered = true;
     }
+  for (const scan of startup.scans) {
+    if (scan.state !== "running") continue;
+    const assetId = scan.existingAssetId ?? scan.result?.assetId;
+    const asset = startup.assets.find((row) => row.asset.id === assetId);
+    if (asset?.locations.includes(scan.uri)) asset.sourceState = "unverified";
+    scan.state = "failed";
+    scan.step = "done";
+    scan.result = {
+      scanId: scan.scanId,
+      state: "failed",
+      ...(assetId ? { assetId } : {}),
+      ...(scan.result?.clipId ? { clipId: scan.result.clipId } : {}),
+      error: {
+        code: "INTERRUPTED",
+        message: "Rescan interrupted; verify the source again",
+      },
+    };
+    delete scan.verifiedAnalysis;
+    recovered = true;
+  }
   if (recovered) await store.commit(startup.revision, startup);
   let writer = false,
     active: AbortController | undefined,

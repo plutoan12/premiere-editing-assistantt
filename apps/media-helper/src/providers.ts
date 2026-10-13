@@ -77,6 +77,9 @@ export function createFiles(): ReadOnlyFiles {
 const tags = z.record(z.string(), z.string()).optional();
 const stream = z.object({
   codec_type: z.string(),
+  disposition: z
+    .object({ attached_pic: z.number().int().optional() })
+    .optional(),
   width: z.number().int().positive().optional(),
   height: z.number().int().positive().optional(),
   channels: z.number().int().nonnegative().optional(),
@@ -95,7 +98,9 @@ const probeSchema = z.object({
 });
 export function normalizeProbe(input: unknown, version: string): ProbeRecord {
   const data = probeSchema.parse(input),
-    v = data.streams.find((s) => s.codec_type === "video"),
+    v = data.streams.find(
+      (s) => s.codec_type === "video" && s.disposition?.attached_pic !== 1,
+    ),
     a = data.streams.find((s) => s.codec_type === "audio");
   if (!v && !a) throw new Error("No supported media stream");
   const still =

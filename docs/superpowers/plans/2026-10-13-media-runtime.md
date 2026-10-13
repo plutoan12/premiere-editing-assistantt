@@ -22,3 +22,5 @@ The user approved proceeding after PR #17. Its existing engine design remains th
 Implementation and exact results are recorded below as work completes.
 
 - Storage/provider tests failed before implementation, then passed. HTTP registration/cancellation/date tests caught input identity reuse and provider-abort result issues; both were corrected with regressions. Full suite: 172 tests passed; full typecheck passed. UXP browser build and actual host register/search/edit/preview passed.
+
+- Final review: three P2 findings fixed with RED→GREEN regressions: interrupted rescan validation, attached artwork media kind, and cached preview rows. Final suite 175/175. No deferred minors. Final validation details are in the runtime research report.

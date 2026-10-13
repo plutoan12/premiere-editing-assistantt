@@ -196,3 +196,92 @@ it("marks interrupted jobs retryable when reopening without replacing completed 
   expect(restored.jobs[0].job.status).toBe("failed");
   expect(restored.jobs[0].job.error).toContain("INTERRUPTED");
 });
+it("blocks interrupted rescans until content is verified again and preserves user edits", async () => {
+  const { server, dir, post } = await fixture(),
+    path = join(dir, "original.wav");
+  await writeFile(path, "before");
+  const initial = importCatalog(
+    ((await (await post("/ingest", { paths: [path] })).json()) as any).catalog,
+  );
+  await server.close();
+  const { openCatalog } = await import("./sqlite-store.js"),
+    { randomUUID } = await import("node:crypto");
+  const { setMetadataOverride, buildOrganizationPlan, defaultRuleSet } =
+    await import("@pea/media-organizer");
+  const store = openCatalog(join(dir, "catalog.sqlite"));
+  let state = await store.read();
+  const id = state.assets[0].asset.id;
+  state = setMetadataOverride(
+    state,
+    { kind: "asset", id },
+    "deviceId",
+    "My Camera",
+  );
+  state.scans[0].state = "running";
+  state.scans[0].step = "reading";
+  state.jobs.push({
+    job: {
+      id: randomUUID(),
+      kind: "media-ingest",
+      status: "running",
+      attempt: 0,
+    },
+    items: [],
+  });
+  await store.commit(state.revision, state);
+  store.close();
+  await writeFile(path, "after replacement");
+  const options = {
+    catalogPath: join(dir, "catalog.sqlite"),
+    providerVersion: "fixture",
+    probe: {
+      async probe() {
+        return {
+          mediaKind: "audio",
+          duration: { ticks: 2n, timebase: { numerator: 1, denominator: 1 } },
+          candidates: [],
+        };
+      },
+    },
+  };
+  const reopened = await createMediaServer(options);
+  cleanup.push(() => reopened.close());
+  const headers = {
+    authorization: "Bearer " + reopened.token,
+    "content-type": "application/json",
+  };
+  const recovered = importCatalog(
+    (
+      (await (
+        await fetch(reopened.baseUrl + "/catalog", { headers })
+      ).json()) as any
+    ).catalog,
+  );
+  const rules = defaultRuleSet(randomUUID());
+  rules.orderedFields = ["mediaKind"];
+  const plan = buildOrganizationPlan(
+    recovered,
+    [{ kind: "asset", id }],
+    rules,
+    [],
+    randomUUID,
+  );
+  expect(plan.assignments).toHaveLength(0);
+  expect(plan.issues[0].code).toBe("source_unverified");
+  expect(recovered.scans[0].state).toBe("failed");
+  expect(recovered.assets[0].analysis).toEqual(initial.assets[0].analysis);
+  const retried = (await (
+    await fetch(reopened.baseUrl + "/ingest", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ paths: [path] }),
+    })
+  ).json()) as any;
+  const after = importCatalog(retried.catalog);
+  expect(retried.result.items[0].state).toBe("updated");
+  expect(after.assets[0].asset.id).toBe(id);
+  expect(after.assets[0].sourceState).toBe("verified");
+  expect(after.metadata.some((m) => m.override?.value === "My Camera")).toBe(
+    true,
+  );
+});

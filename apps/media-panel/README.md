@@ -39,7 +39,7 @@ PEA_FFMPEG_PATH=/absolute/path/to/ffmpeg PEA_FFPROBE_PATH=/absolute/path/to/ffpr
   npx --yes pnpm@10.17.1 --filter @pea/media-helper validate:media
 ```
 
-The real-media command generates a fresh temporary directory (or uses a fresh `PEA_MEDIA_VALIDATION_DIR`), 10 small H.264 MOVs and 10 PCM WAVs. It checks registration, restart, IDs, overrides, search/classification, corrupt media, and unchanged source hashes, and writes `report.json`. It does not operate Premiere. See the [actual runtime observations](../../docs/research/2026-10-13-media-organizer-runtime.md) for the separate host test.
+The real-media command generates a fresh temporary directory (or uses a fresh `PEA_MEDIA_VALIDATION_DIR`), 10 small H.264 MOVs and 10 PCM WAVs. It checks registration, restart, IDs, overrides, search/classification, corrupt media, and unchanged source hashes, additionally verifies an MP3 with embedded cover artwork, and writes `report.json`. It does not operate Premiere. See the [actual runtime observations](../../docs/research/2026-10-13-media-organizer-runtime.md) for the separate host test.
 
 ## Reuse
 
