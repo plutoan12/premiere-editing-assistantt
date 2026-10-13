@@ -1,0 +1,66 @@
+import argparse
+import json
+import shutil
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+parser=argparse.ArgumentParser(description='Juno Korean preview browser checks; requires Python Playwright.')
+parser.add_argument('--preview',type=Path,default=Path(__file__).with_name('preview.html'))
+parser.add_argument('--evidence-dir',type=Path,required=True)
+args=parser.parse_args()
+out=args.evidence_dir
+out.mkdir(parents=True,exist_ok=True)
+report=[]
+with sync_playwright() as p:
+    browser=p.chromium.launch(executable_path=shutil.which('chromium'), headless=True, args=['--no-sandbox'])
+    page=browser.new_page(viewport={'width':1440,'height':1050},device_scale_factor=1)
+    errors=[]; page.on('pageerror',lambda e: errors.append(str(e)))
+    page.set_content(args.preview.read_text(encoding='utf-8'))
+    page.wait_for_function("document.body.dataset.ready === 'true'")
+    def check(name, condition):
+        assert condition,name
+        report.append({'check':name,'passed':True})
+    check('default Korean caption fits in at most two lines',page.locator('#status').get_attribute('data-state')=='ready')
+    def within_viewport():
+        return page.evaluate("""() => {const a=document.querySelector('#caption').getBoundingClientRect(),b=document.querySelector('#viewport').getBoundingClientRect();return a.width>0 && a.left>=b.left && a.right<=b.right && a.top>=b.top && a.bottom<=b.bottom}""")
+    check('caption is actually visible inside the preview viewport',within_viewport())
+    page.locator('#caption-input').fill('한글 👩🏽‍💻\n두 번째 줄')
+    check('NFC Hangul and intact emoji render', '한글 👩🏽‍💻' in page.locator('#caption').inner_text())
+    check('hard newline creates two lines',page.locator('#caption .line').count()==2)
+    for mode in ['landscape','portrait']:
+        page.locator('#orientation').select_option(mode)
+        page.locator('#caption-input').fill('한글 자막은\n이렇게 보여')
+        page.locator('#seek').fill('0.14');page.locator('#seek').dispatch_event('input')
+        page.wait_for_timeout(50)
+        rects=page.evaluate("""() => {const a=document.querySelector('#caption').getBoundingClientRect(),b=document.querySelector('#safe').getBoundingClientRect();return {left:a.left,right:a.right,top:a.top,bottom:a.bottom,safeLeft:b.left,safeRight:b.right,safeTop:b.top,safeBottom:b.bottom}}""")
+        check(mode+' caption remains inside viewport at maximum pop',within_viewport())
+        check(mode+' pop frame stays inside safe bounds',rects['left']>=rects['safeLeft']-1 and rects['right']<=rects['safeRight']+1 and rects['top']>=rects['safeTop']-1 and rects['bottom']<=rects['safeBottom']+1)
+    page.locator('#caption-input').fill('가'*100)
+    check('long Korean text reports overflow',page.locator('#status').get_attribute('data-state')=='overflow')
+    check('overflow blocks export',not page.locator('#export').is_enabled())
+    page.locator('#orientation').select_option('landscape')
+    page.locator('#caption-input').fill('<img src=x onerror=alert(1)>')
+    check('caption is text, not injected markup',page.locator('#caption img').count()==0)
+    check('unknown MOGRT binding blocks export',not page.locator('#export').is_enabled())
+    page.locator('#caption-input').fill('말보다 중요한 건\n타이밍이야 👩🏽‍💻')
+    page.locator('.binding summary').click()
+    page.locator('#template-id').fill('local-test-template')
+    page.locator('#template-version').fill('1.0.0')
+    page.locator('#template-path').fill('/tmp/example.mogrt')
+    check('explicit test binding enables draft-only export',page.locator('#export').is_enabled())
+    with page.expect_download() as info:page.locator('#export').click()
+    download=info.value;download.save_as(out/'browser-draft.json')
+    draft=json.loads((out/'browser-draft.json').read_text())
+    check('downloaded JSON carries text without graphics writes',draft['edit']=={'text':'말보다 중요한 건\n타이밍이야 👩🏽‍💻'} and draft['mode']=='editable-text-draft')
+    page.locator('#template-path').fill('/tmp/../example.mogrt')
+    check('path traversal blocks export',not page.locator('#export').is_enabled())
+    page.locator('#template-path').fill('')
+    page.locator('#seek').fill('1.5');page.locator('#seek').dispatch_event('input')
+    check('demo has exactly one active word',page.locator('.word.active').count()==1)
+    check('no JavaScript errors',not errors)
+    page.screenshot(path=str(out/'preview.png'),full_page=True)
+    page.set_viewport_size({'width':390,'height':844})
+    page.wait_for_timeout(100)
+    check('mobile page does not scroll horizontally',page.evaluate('document.documentElement.scrollWidth <= window.innerWidth'))
+    (out/'browser-checks.json').write_text(json.dumps({'environment':'Chromium browser checks; not Safari, UXP or Premiere','checks':report,'errors':errors},ensure_ascii=False,indent=2))
+    browser.close()
+print(f'PASS: {len(report)} browser checks')
