@@ -11,3 +11,4 @@ export * from "./transcript.js";
 export * from "./edit.js";
 export * from "./jobs.js";
 export * from "./artifacts.js";
+export * from "./providers.js";
