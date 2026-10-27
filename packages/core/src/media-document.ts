@@ -1,10 +1,14 @@
 import { z } from "zod";
 import { MediaAssetSchema, ClipReferenceSchema } from "./media.js";
-import { CORE_SCHEMA_VERSION } from "./version.js";
+import { SEMVER_PATTERN, isSchemaVersionSupported } from "./version.js";
+const SupportedSchemaVersion = z
+  .string()
+  .regex(SEMVER_PATTERN)
+  .refine((v) => isSchemaVersionSupported(v), "unsupported schema version");
 import { encodeMediaTime, decodeMediaTime } from "./time-json.js";
 export const MediaDocumentSchema = z
   .object({
-    schemaVersion: z.literal(CORE_SCHEMA_VERSION),
+    schemaVersion: SupportedSchemaVersion,
     kind: z.literal("media"),
     data: z
       .object({
@@ -47,7 +51,7 @@ const WireClipSchema = ClipReferenceSchema.extend({
 });
 const WireDocumentSchema = z
   .object({
-    schemaVersion: z.literal(CORE_SCHEMA_VERSION),
+    schemaVersion: SupportedSchemaVersion,
     kind: z.literal("media"),
     data: z
       .object({
