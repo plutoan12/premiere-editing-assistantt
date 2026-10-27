@@ -12,7 +12,7 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "schemas:generate": "node --experimental-strip-types scripts/generate-schemas.ts"
+    "schemas:generate": "tsx scripts/generate-schemas.ts"
   },
   "dependencies": {
     "zod": "^4.1.0"
