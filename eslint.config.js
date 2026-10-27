@@ -33,6 +33,14 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_", ignoreRestSiblings: true },
+      ],
+    },
+  },
+  {
     files: ["packages/**/*.ts"],
     rules: {
       "no-restricted-imports": ["error", { patterns: NLE_AND_APP_LAYERS }],
