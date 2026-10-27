@@ -8,3 +8,4 @@ export * from "./media.js";
 export * from "./sync.js";
 export * from "./analysis.js";
 export * from "./transcript.js";
+export * from "./edit.js";
