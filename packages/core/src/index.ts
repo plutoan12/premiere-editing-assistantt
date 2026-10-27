@@ -6,3 +6,5 @@ export * from "./ids.js";
 export * from "./project.js";
 export * from "./media.js";
 export * from "./sync.js";
+export * from "./analysis.js";
+export * from "./transcript.js";
