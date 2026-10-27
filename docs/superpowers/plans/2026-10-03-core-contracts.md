@@ -30,7 +30,7 @@
 4. Retried jobs must not replace the last valid artifact with a failed output.
 5. Unknown future schema versions must fail explicitly rather than being interpreted as the current version. Same-major, lower-or-equal-minor documents must be accepted; different-major or higher-minor documents must be rejected with `UnsupportedSchemaVersion`.
 6. Cross-timebase comparison (e.g. 24000/1001 vs 48000/1) at tick values near 2^53 must stay exact; no intermediate may overflow the safe-integer range.
-7. A retry must create a new Job with `retryOf`/`attempt`; terminal Jobs must have no outgoing transitions.
+7. A retry must create a new Job with `retryOf` and `attempt + 1` (first run is attempt 0); terminal Jobs must have no outgoing transitions.
 8. Artifact promotion must be atomic and must never let a `rejected` candidate or a failed Job's output replace `current`.
 
 ---

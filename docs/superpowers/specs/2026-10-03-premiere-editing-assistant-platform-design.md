@@ -85,7 +85,7 @@ Legal transitions:
 
 `completed`, `failed` and `cancelled` are terminal. No transition leaves a terminal state.
 
-Retry never re-opens a terminal Job. A retry creates a new Job that records `retryOf` (the previous job id) and `attempt` (1-based). The previous Job and any outputs it produced stay unchanged.
+Retry never re-opens a terminal Job. A retry creates a new Job that records `retryOf` (the previous job id) and `attempt` (0 for the first run, incremented on every retry). The previous Job and any outputs it produced stay unchanged.
 
 Cancellation is cooperative: a running Job receives an abort signal, must stop promptly, and must reach `cancelled` without promoting partially written outputs.
 
