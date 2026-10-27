@@ -14,6 +14,7 @@ import {
 import { createJournalStore } from "../../src/bin-journal.js";
 declare const require: (name: string) => any;
 const ppro = require("premierepro"),
+  platform = String(require("os").platform()),
   fs = require("fs"),
   cfg = require("./config.js"),
   out = document.getElementById("report") as HTMLTextAreaElement;
@@ -46,7 +47,7 @@ document.getElementById("run")!.addEventListener("click", async () => {
       ),
       "Import failed",
     );
-    const native = createBinHost(ppro, report.version),
+    const native = createBinHost(ppro, report.version, platform),
       before = await native.read();
     const source = before.items.find((i) => i.sourcePath === cfg.sourcePath);
     assert(source, "Owned fixture source missing");
@@ -80,7 +81,7 @@ document.getElementById("run")!.addEventListener("click", async () => {
       ["mediaKind", "video"],
     ] as const)
       state = setMetadataOverride(state, { kind: "asset", id }, field, value);
-    const store = createJournalStore(localStorage),
+    const store = createJournalStore(localStorage, platform),
       rules = defaultRuleSet(crypto.randomUUID()),
       plan = prepareBinPlan(state, rules, await host.read(), () =>
         crypto.randomUUID(),
@@ -103,7 +104,7 @@ document.getElementById("run")!.addEventListener("click", async () => {
     assert(again.moves.length === 0, "Repeated apply not idempotent");
     report.idempotent = true;
     await undoBinPlan(
-      createJournalStore(localStorage).read(before)!,
+      createJournalStore(localStorage, platform).read(before)!,
       host,
       store.save,
     );

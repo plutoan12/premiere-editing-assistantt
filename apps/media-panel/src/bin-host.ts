@@ -5,6 +5,7 @@ import {
   type BinHost,
   type BinNode,
 } from "./bin-organizer.js";
+import { projectPathKey } from "./project-path.js";
 interface Item {
   name: string;
   getId(): string;
@@ -34,9 +35,7 @@ export interface BinPremiere {
   };
   FolderItem: { cast(item: Item): Folder | null };
   ClipProjectItem: {
-    cast(
-      item: Item,
-    ): null | {
+    cast(item: Item): null | {
       isSequence(): Promise<boolean>;
       isOffline(): Promise<boolean>;
       getMediaFilePath(): Promise<string>;
@@ -44,12 +43,17 @@ export interface BinPremiere {
   };
 }
 /** Public 26.5 APIs; every Action is constructed inside lockedAccess. */
-export function createBinHost(ppro: BinPremiere, appVersion: string): BinHost {
+export function createBinHost(
+  ppro: BinPremiere,
+  appVersion: string,
+  platform = "",
+): BinHost {
+  const pathKey = (path: string) => projectPathKey(path, platform);
   async function capture() {
     const project = await ppro.Project.getActiveProject();
     demand(project && project.path, "저장된 Premiere 프로젝트를 먼저 여세요.");
     const projectKey = project.guid.toString(),
-      projectPath = project.path,
+      projectPath = pathKey(project.path),
       root = await project.getRootItem();
     const refs = new Map<string, Item>(),
       folders = new Map<string, Folder>(),
@@ -105,7 +109,8 @@ export function createBinHost(ppro: BinPremiere, appVersion: string): BinHost {
     demand(selected.length <= 500, "한 번에 500개 이하의 원본을 선택하세요.");
     const active = await ppro.Project.getActiveProject();
     demand(
-      active?.guid.toString() === projectKey && active.path === projectPath,
+      active?.guid.toString() === projectKey &&
+        pathKey(active.path) === projectPath,
       "프로젝트가 변경됐습니다.",
     );
     const tree: BinTree = {
@@ -154,7 +159,7 @@ export function createBinHost(ppro: BinPremiere, appVersion: string): BinHost {
       project.lockedAccess(() => {
         demand(
           project.guid.toString() === tree.projectKey &&
-            project.path === tree.projectPath,
+            pathKey(project.path) === tree.projectPath,
           "프로젝트가 변경됐습니다.",
         );
         // Synchronous parent/name checks close the gap between async discovery and Actions.

@@ -20,11 +20,18 @@ import { createJournalStore } from "./bin-journal.js";
 declare const require: (name: string) => any;
 const fs = require("uxp").storage.localFileSystem,
   ppro = require("premierepro") as Premiere & BinPremiere;
-const binHost = createBinHost(ppro, String(require("uxp").host.version));
+const platform = String(require("os").platform());
+const binHost = createBinHost(
+  ppro,
+  String(require("uxp").host.version),
+  platform,
+);
 const newId = () => crypto.randomUUID();
 let binPlan: BinPlan | undefined;
-const { save: saveJournal, read: readJournal } =
-  createJournalStore(localStorage);
+const { save: saveJournal, read: readJournal } = createJournalStore(
+  localStorage,
+  platform,
+);
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const status = el("status"),

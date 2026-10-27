@@ -123,3 +123,35 @@ it("rejects stale context and an unconfirmed native transaction", async () => {
   ).rejects.toThrow(/확인/);
   expect(f.nodes).toHaveLength(2);
 });
+
+it("keeps Mac project identity stable across NFC/NFD reopen and still rejects Save As", async () => {
+  const f = fixture();
+  f.project.path = "/편집/프로젝트.prproj";
+  const host = native.createBinHost(f.ppro, "26.5.2", "darwin");
+  const before = await host.read();
+  f.project.path = f.project.path.normalize("NFD");
+  expect(await host.read()).toEqual(before);
+  await host.transact(before, [
+    { kind: "create", parentId: "root", name: "Destination" },
+  ]);
+  expect(f.nodes).toHaveLength(3);
+  const applied = await host.read();
+  f.project.path = "/다른/프로젝트.prproj";
+  await expect(
+    host.transact(applied, [{ kind: "remove", id: "new-1" }]),
+  ).rejects.toThrow(/변경/);
+  expect(f.nodes).toHaveLength(3);
+});
+it("does not normalize Windows project identity", async () => {
+  const f = fixture();
+  f.project.path = "C:\\편집\\프로젝트.prproj";
+  const host = native.createBinHost(f.ppro, "26.5.2", "win32");
+  const before = await host.read();
+  f.project.path = f.project.path.normalize("NFD");
+  await expect(
+    host.transact(before, [
+      { kind: "create", parentId: "root", name: "Wrong" },
+    ]),
+  ).rejects.toThrow(/변경/);
+  expect(f.nodes).toHaveLength(2);
+});

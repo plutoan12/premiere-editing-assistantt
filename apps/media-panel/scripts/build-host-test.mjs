@@ -11,7 +11,7 @@ await build({
   platform: "browser",
   format: "cjs",
   target: "es2022",
-  external: ["premierepro", "uxp", "fs", "./config.js"],
+  external: ["premierepro", "uxp", "os", "fs", "./config.js"],
 });
 await writeFile(
   directory + "/config.js",

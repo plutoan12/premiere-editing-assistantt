@@ -41,6 +41,24 @@ Final independent review found a capacity boundary: creating Bins could exceed t
 
 Real ffprobe/helper verification against the generated H.264 source returned `verified: true` at catalog revision 7, with identical source hashes before/after (`build/media-bin-helper/validation.json`). All 192 tests, typecheck and panel build passed locally and in GitHub CI on `e4a6df6`.
 
-The shipping development panel loaded in Premiere 26.5.2, connected to the isolated helper, restored its one-file catalog at revision 7, and displayed the confirmed `Media Organizer / 2026-10-13 / Camera A / Video` classification. UXP Developer Tools also reported a successful panel reload. The remaining product-button acceptance could not be completed: computer automation repeatedly returned `noWindowsAvailable` when selecting the visible test clip in Premiere's main project window; accessibility focus/keyboard attempts did not confirm a selection. No product apply was attempted with an unverified selection. This is separate from the passing native acceptance harness, which supplies its fixture selection explicitly.
+## Product-panel reload acceptance completed (2026-10-27)
 
-Before promoting the PR from draft, complete this UI check in the generated-media project: select `샘플_01.mov`, connect the helper, review and apply the displayed plan, verify its destination, reload the panel, then use **최근 분류 되돌리기** without reconnecting the helper. Verify the clip is at its original root and all four empty created Bins are gone. A fresh journal-store instance is already covered by native acceptance; restoration across an actual product-panel reload remains unqualified.
+The product buttons were used to review and apply the one-file catalog (revision 7) in the generated-media project. The UI showed `샘플_01.mov` under `Media Organizer / 2026-10-13 / Camera A / Video`. The isolated helper was stopped before the restore check.
+
+Screen automation initially failed with `noWindowsAvailable`; a fresh app binding and current accessibility snapshot recovered access, and the user unlocked macOS when required. Use a fresh snapshot after switching windows, target Premiere 26.5.2 explicitly when the Beta is also running, and use Shift+1 to focus the project panel. No automation-tool implementation was changed.
+
+Reopening the saved fixture exposed a product defect: Premiere returned the Korean project directory in NFD while the saved journal key contained NFC. Read-only UXP diagnostics confirmed the same project GUID, root ID, clip ID/name and source path; only the project path representation differed. The panel incorrectly reported no restore record.
+
+The Mac adapter now canonicalizes project paths to NFC. The journal store reads earlier NFC/NFD/mixed-path records only for the same GUID and normalized full path, and rejects conflicting records. A separate canonical storage key is saved and verified before inverse actions; completed restores take precedence over retained legacy keys. Windows paths remain exact, and Save As, different GUIDs, source paths, item IDs and collision checks retain their existing guards. Platform detection uses Adobe's documented [`os.platform()`](https://developer.adobe.com/premiere-pro/uxp/resources/recipes/host-info/).
+
+Five regression cases were observed failing before this fix. The final suite passes all **200 tests**, including legacy NFC/NFD/mixed paths, different-project isolation, Windows path distinctions, conflicting legacy records, and no host mutation when a migrated journal write fails. Workspace typecheck, the UXP panel build, and `git diff --check` also pass.
+
+Final UI check in Premiere **26.5.2**, using the original persisted applied journal:
+
+1. Confirmed `build/media-bin-helper/connection.json` was absent and the helper remained stopped.
+2. Reloaded the newly built product panel using UXP Developer Tools; it reported **Plugin Reload Successful**.
+3. Without connecting the helper, clicked **최근 분류 되돌리기**. The panel displayed **클립을 원래 Bin으로 복원했습니다.**
+4. Focused the project panel with Shift+1. The screenshot showed `샘플_01.mov` directly under `Media Bin Acceptance.prproj`; all four created Bins were gone. No sequence existed.
+5. Saved the owned test project in the restored state.
+
+The remaining product-button acceptance is complete. This qualifies this generated one-clip Mac fixture, including a real panel reload and project reopen; it does not qualify Windows, shared projects, a populated timeline, or crash/power-loss durability.
