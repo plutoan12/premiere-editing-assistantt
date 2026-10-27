@@ -5,7 +5,7 @@ import { EntityIdSchema } from "./ids.js";
 export { ConfidenceSchema };
 export type Confidence = z.infer<typeof ConfidenceSchema>;
 
-const HexDigestSchema = z.string().regex(/^[0-9a-f]{32,128}$/, "must be a lowercase hex digest");
+export const HexDigestSchema = z.string().regex(/^[0-9a-f]{32,128}$/, "must be a lowercase hex digest");
 
 /**
  * Who produced a result and from what. Carried by every AI or analysis output

@@ -9,3 +9,5 @@ export * from "./sync.js";
 export * from "./analysis.js";
 export * from "./transcript.js";
 export * from "./edit.js";
+export * from "./jobs.js";
+export * from "./artifacts.js";
