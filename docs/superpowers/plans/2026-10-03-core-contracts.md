@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-10-03-premiere-editing-assistant-platform-design.md`
 
+**Status:** Implemented 2026-10-27 (all tasks checked below). Deviations from the original file list are noted inline.
+
 ## Global Constraints
 - Core must remain NLE-independent.
 - No source-media mutation or deletion.
@@ -46,21 +48,22 @@
 - Create: `packages/core/src/index.ts`
 - Create: `packages/core/src/version.ts`
 - Create: `.nvmrc` (Node 22) and `packageManager` field in root `package.json`
-- Create: `vitest.workspace.ts` (covers `packages/*` and root `tests/`)
+- Create: `vitest.config.ts` with `test.projects` (covers `packages/*` and root `tests/`; Vitest 4 dropped the workspace file)
 - Create: `eslint.config.js` with import-boundary rules (`no-restricted-imports` or dependency-cruiser)
-- Create: `.github/workflows/ci.yml` (lint, typecheck, test on push and pull request)
+- Create: `.github/workflows/ci.yml` (lint, typecheck, test, schema drift check on push and pull request)
+- Create: `tsconfig.json` (root, typechecks `tests/`)
 - Test: `packages/core/src/version.test.ts`
 
 **Interfaces:**
 - Produces: `CORE_SCHEMA_VERSION: "1.0.0"`
 
-- [ ] Write a failing test asserting `CORE_SCHEMA_VERSION === "1.0.0"`.
-- [ ] Run `pnpm --filter @pea/core test`; verify failure before implementation.
-- [ ] Add minimal workspace/Core configuration and export `CORE_SCHEMA_VERSION`.
-- [ ] Add boundary lint rules: `packages/*` may not import `adapters/*` or `apps/*`; `packages/core` may not import any other workspace package or vendor SDK. Add a fixture file that violates the rule and confirm lint fails, then remove it.
-- [ ] Add the CI workflow running `pnpm lint`, `pnpm typecheck` and `pnpm test`.
-- [ ] Run Core tests and TypeScript typecheck; verify success.
-- [ ] Commit as `chore: initialize core workspace`.
+- [x] Write a failing test asserting `CORE_SCHEMA_VERSION === "1.0.0"`.
+- [x] Run `pnpm --filter @pea/core test`; verify failure before implementation.
+- [x] Add minimal workspace/Core configuration and export `CORE_SCHEMA_VERSION`.
+- [x] Add boundary lint rules: `packages/*` may not import `adapters/*` or `apps/*`; `packages/core` may not import any other workspace package or vendor SDK. Add a fixture file that violates the rule and confirm lint fails, then remove it.
+- [x] Add the CI workflow running `pnpm lint`, `pnpm typecheck` and `pnpm test`.
+- [x] Run Core tests and TypeScript typecheck; verify success.
+- [x] Commit as `chore: initialize core workspace`.
 
 ### Task 2: Exact time and frame-rate model
 
@@ -74,18 +77,19 @@
 - Produces: `Rational`, `FrameRate`, `MediaTime`, `TimeRange`, `compareMediaTime(a,b)`, `convertMediaTime(t, timebase)`, `validateTimeRange(range)`
 - Produces: `Timecode` (`{ frames, frameRate, dropFrame }`), `toTimecode(mediaTime, frameRate, dropFrame)`, `fromTimecode(timecode)`
 
-- [ ] Write failing tests for 24/1, 24000/1001, 30000/1001 rational construction and reduction, exact comparison and negative-duration rejection.
-- [ ] Write failing tests for cross-timebase comparison and conversion with tick values near 2^53 (e.g. 24000/1001 vs 48000/1), asserting exactness and explicit rejection of out-of-range inputs.
-- [ ] Write failing tests for `Timecode`: drop-frame and non-drop-frame identity is preserved through `toTimecode`/`fromTimecode` round-trips; `MediaTime` has no drop-frame field.
-- [ ] Run the time tests and verify failure.
-- [ ] Implement integer/rational time types using BigInt (or reduce-then-guard) internally, without storing canonical time as floating-point seconds.
-- [ ] Implement `Timecode` as a display type separate from `MediaTime`.
-- [ ] Run tests and typecheck; verify success.
-- [ ] Commit as `feat: add exact media time model`.
+- [x] Write failing tests for 24/1, 24000/1001, 30000/1001 rational construction and reduction, exact comparison and negative-duration rejection.
+- [x] Write failing tests for cross-timebase comparison and conversion with tick values near 2^53 (e.g. 24000/1001 vs 48000/1), asserting exactness and explicit rejection of out-of-range inputs.
+- [x] Write failing tests for `Timecode`: drop-frame and non-drop-frame identity is preserved through `toTimecode`/`fromTimecode` round-trips; `MediaTime` has no drop-frame field.
+- [x] Run the time tests and verify failure.
+- [x] Implement integer/rational time types using BigInt (or reduce-then-guard) internally, without storing canonical time as floating-point seconds.
+- [x] Implement `Timecode` as a display type separate from `MediaTime`.
+- [x] Run tests and typecheck; verify success.
+- [x] Commit as `feat: add exact media time model`.
 
 ### Task 3: Canonical project and media contracts
 
 **Files:**
+- Create: `packages/core/src/common.ts` (shared Zod primitives)
 - Create: `packages/core/src/ids.ts`
 - Create: `packages/core/src/project.ts`
 - Create: `packages/core/src/media.ts`
@@ -98,12 +102,12 @@
 **Interfaces:**
 - Produces: `EntityId` (UUID v7), `newEntityId()`, `Project`, `MediaAsset`, `ClipReference`, `MediaFingerprint`, `SyncGroup`
 
-- [ ] Write failing tests for UUID v7 IDs (format, time-ordering, never derived from paths or NLE ids), source immutability metadata, explicit frame rate and invalid clip ranges.
-- [ ] Write failing tests for `SyncGroup`: members reference existing `MediaAsset` ids, each member carries an explicit offset as `MediaTime`, a group needs at least two members, and a designated reference member.
-- [ ] Run tests and verify failure.
-- [ ] Implement id, project, media and sync contracts using the Task 2 time model.
-- [ ] Run tests and typecheck; verify success.
-- [ ] Commit as `feat: add project and media contracts`.
+- [x] Write failing tests for UUID v7 IDs (format, time-ordering, never derived from paths or NLE ids), source immutability metadata, explicit frame rate and invalid clip ranges.
+- [x] Write failing tests for `SyncGroup`: members reference existing `MediaAsset` ids, each member carries an explicit offset as `MediaTime`, a group needs at least two members, and a designated reference member.
+- [x] Run tests and verify failure.
+- [x] Implement id, project, media and sync contracts using the Task 2 time model.
+- [x] Run tests and typecheck; verify success.
+- [x] Commit as `feat: add project and media contracts`.
 
 ### Task 4: Transcript and analysis contracts
 
@@ -116,11 +120,11 @@
 **Interfaces:**
 - Produces: `Transcript`, `TranscriptSegment`, `Speaker`, `AnalysisTag`, `Provenance`, `Confidence`
 
-- [ ] Write failing tests for ordered segments, media-bound time ranges, confidence bounds and provenance metadata.
-- [ ] Run tests and verify failure.
-- [ ] Implement transcript/analysis contracts without provider-specific fields.
-- [ ] Run tests and typecheck; verify success.
-- [ ] Commit as `feat: add transcript and analysis contracts`.
+- [x] Write failing tests for ordered segments, media-bound time ranges, confidence bounds and provenance metadata.
+- [x] Run tests and verify failure.
+- [x] Implement transcript/analysis contracts without provider-specific fields.
+- [x] Run tests and typecheck; verify success.
+- [x] Commit as `feat: add transcript and analysis contracts`.
 
 ### Task 5: Editorial decision contracts
 
@@ -131,11 +135,11 @@
 **Interfaces:**
 - Produces: `EditDecision`, `SequencePlan`, `GraphicDecision`, `AudioDecision`, `DeliveryVariant`
 
-- [ ] Write failing tests for source references, destination placement, invalid ranges and non-destructive edit semantics.
-- [ ] Run tests and verify failure.
-- [ ] Implement canonical editorial decision types independent of Premiere track APIs.
-- [ ] Run tests and typecheck; verify success.
-- [ ] Commit as `feat: add editorial decision contracts`.
+- [x] Write failing tests for source references, destination placement, invalid ranges and non-destructive edit semantics.
+- [x] Run tests and verify failure.
+- [x] Implement canonical editorial decision types independent of Premiere track APIs.
+- [x] Run tests and typecheck; verify success.
+- [x] Commit as `feat: add editorial decision contracts`.
 
 ### Task 6: Job and artifact lifecycle
 
@@ -149,15 +153,15 @@
 - Produces: `Job` (with `retryOf?`, `attempt`, `results: JobItemResult[]`), `JobStatus` (`queued | running | completed | failed | cancelled`), `JobItemResult` (`succeeded | failed | skipped` with reason), `canTransitionJob(from,to)`, `createRetry(job)`
 - Produces: `Artifact` (with `cacheKey`, `provenance`), `ArtifactStatus` (`candidate | validated | current | superseded | rejected`), `ArtifactProvenance` (module/version, provider/model version, prompt id/version, input fingerprints, config hash), `promoteArtifact(candidate,current)`, `deriveCacheKey(provenance)`
 
-- [ ] Write failing tests for every legal transition listed in the spec and for rejection of every other pair, including that terminal states have no outgoing transitions.
-- [ ] Write failing tests that `createRetry` returns a new Job with `retryOf` and `attempt + 1` and leaves the original untouched; that cancellation is allowed from `queued` and `running`.
-- [ ] Write failing tests that partial success is expressed through `results` on a `completed` Job, not through a separate status.
-- [ ] Write failing tests that `promoteArtifact` only accepts a `validated` candidate, marks the previous `current` as `superseded`, and refuses `candidate`/`rejected` inputs so a failed output never replaces `current`.
-- [ ] Write failing tests that `deriveCacheKey` is stable for equal provenance and changes when any model, prompt, config or fingerprint input changes.
-- [ ] Run tests and verify failure.
-- [ ] Implement lifecycle state machines and immutable artifact promotion rules.
-- [ ] Run tests and typecheck; verify success.
-- [ ] Commit as `feat: add job and artifact lifecycle`.
+- [x] Write failing tests for every legal transition listed in the spec and for rejection of every other pair, including that terminal states have no outgoing transitions.
+- [x] Write failing tests that `createRetry` returns a new Job with `retryOf` and `attempt + 1` and leaves the original untouched; that cancellation is allowed from `queued` and `running`.
+- [x] Write failing tests that partial success is expressed through `results` on a `completed` Job, not through a separate status.
+- [x] Write failing tests that `promoteArtifact` only accepts a `validated` candidate, marks the previous `current` as `superseded`, and refuses `candidate`/`rejected` inputs so a failed output never replaces `current`.
+- [x] Write failing tests that `deriveCacheKey` is stable for equal provenance and changes when any model, prompt, config or fingerprint input changes.
+- [x] Run tests and verify failure.
+- [x] Implement lifecycle state machines and immutable artifact promotion rules.
+- [x] Run tests and typecheck; verify success.
+- [x] Commit as `feat: add job and artifact lifecycle`.
 
 ### Task 7: Provider capability interfaces
 
@@ -169,11 +173,11 @@
 - Produces: `SttProvider`, `VisionProvider`, `LlmProvider`, `TranslationProvider`, `MediaProbeProvider`
 - Consumes: canonical Core inputs/outputs only.
 
-- [ ] Write compile-time/mock tests proving provider implementations can satisfy interfaces without vendor types entering consumers.
-- [ ] Run tests and verify failure.
-- [ ] Implement capability interfaces with abort/cancellation and version metadata.
-- [ ] Run tests and typecheck; verify success.
-- [ ] Commit as `feat: define provider capability interfaces`.
+- [x] Write compile-time/mock tests proving provider implementations can satisfy interfaces without vendor types entering consumers.
+- [x] Run tests and verify failure.
+- [x] Implement capability interfaces with abort/cancellation and version metadata.
+- [x] Run tests and typecheck; verify success.
+- [x] Commit as `feat: define provider capability interfaces`.
 
 ### Task 8: Serialized schemas and contract validation
 
@@ -186,7 +190,8 @@
 - Create: `schemas/v1/edit.schema.json`
 - Create: `schemas/v1/job.schema.json`
 - Create: `schemas/v1/artifact.schema.json`
-- Create: `packages/core/scripts/generate-schemas.ts` (Zod -> JSON Schema)
+- Create: `packages/core/scripts/generate-schemas.ts` (Zod -> JSON Schema, run with `tsx`)
+- Create: `packages/core/src/schemas.ts` (bundle definitions shared by the generator and the drift test)
 - Create: `packages/core/src/validation.ts`
 - Test: `packages/core/src/validation.test.ts`
 - Test: `packages/core/src/schema-drift.test.ts`
@@ -194,30 +199,30 @@
 **Interfaces:**
 - Produces: `parseCoreDocument(input)`, `CoreValidationError`, `UnsupportedSchemaVersion`, `isSchemaVersionSupported(version)`
 
-- [ ] Write failing tests for valid v1 documents, malformed time values, tick/timebase values outside the safe-integer range, and missing `schemaVersion`.
-- [ ] Write failing tests for the compatibility policy: same major with lower-or-equal minor is accepted; different major or higher minor is rejected with `UnsupportedSchemaVersion` naming both versions; patch is ignored.
-- [ ] Write a failing drift test that regenerates JSON Schema from the Zod definitions and asserts it equals the committed `schemas/v1/*.json`.
-- [ ] Run tests and verify failure.
-- [ ] Add the generator script, generate the v1 schemas, and add runtime parsing with actionable validation errors.
-- [ ] Run tests and typecheck; verify success.
-- [ ] Commit as `feat: add versioned core schema validation`.
+- [x] Write failing tests for valid v1 documents, malformed time values, tick/timebase values outside the safe-integer range, and missing `schemaVersion`.
+- [x] Write failing tests for the compatibility policy: same major with lower-or-equal minor is accepted; different major or higher minor is rejected with `UnsupportedSchemaVersion` naming both versions; patch is ignored.
+- [x] Write a failing drift test that regenerates JSON Schema from the Zod definitions and asserts it equals the committed `schemas/v1/*.json`.
+- [x] Run tests and verify failure.
+- [x] Add the generator script, generate the v1 schemas, and add runtime parsing with actionable validation errors.
+- [x] Run tests and typecheck; verify success.
+- [x] Commit as `feat: add versioned core schema validation`.
 
 ### Task 9: Core public API and contract smoke test
 
 **Files:**
 - Modify: `packages/core/src/index.ts`
-- Create: `tests/core-contract-smoke.test.ts` (picked up by the Task 1 Vitest workspace)
+- Create: `tests/core-contract-smoke.test.ts` (picked up by the Task 1 Vitest projects; root depends on `@pea/core` via `workspace:*`)
 - Create: `.env.example`
 - Modify: `README.md`
 
 **Interfaces:**
 - Produces: stable `@pea/core` public exports consumed by all later engines.
 
-- [ ] Write a failing smoke test that creates a Project, MediaAsset, SyncGroup, Transcript, SequencePlan, Job and Artifact exclusively through public exports.
-- [ ] Run the smoke test and verify failure.
-- [ ] Export the intended Core surface, document safety/architecture rules, and add an empty safe environment template.
-- [ ] Run `pnpm test` and `pnpm typecheck`; verify all pass.
-- [ ] Commit as `feat: establish core public contract`.
+- [x] Write a failing smoke test that creates a Project, MediaAsset, SyncGroup, Transcript, SequencePlan, Job and Artifact exclusively through public exports.
+- [x] Run the smoke test and verify failure.
+- [x] Export the intended Core surface, document safety/architecture rules, and add an empty safe environment template.
+- [x] Run `pnpm test` and `pnpm typecheck`; verify all pass.
+- [x] Commit as `feat: establish core public contract`.
 
 ## Completion Gate
 Core is complete only when every later engine can model its inputs and outputs without importing Premiere APIs, vendor SDK types, floating-point canonical timestamps or another engine's private state.

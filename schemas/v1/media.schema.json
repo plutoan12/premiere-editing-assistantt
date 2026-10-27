@@ -45,7 +45,7 @@
             },
             "sizeBytes": {
               "type": "integer",
-              "minimum": -9007199254740991,
+              "minimum": 0,
               "maximum": 9007199254740991
             },
             "strategy": {
@@ -94,7 +94,7 @@
             },
             "denominator": {
               "type": "integer",
-              "minimum": -9007199254740991,
+              "minimum": 1,
               "maximum": 9007199254740991
             }
           },
@@ -124,7 +124,7 @@
             },
             "denominator": {
               "type": "integer",
-              "minimum": -9007199254740991,
+              "minimum": 1,
               "maximum": 9007199254740991
             }
           },
@@ -136,12 +136,12 @@
         },
         "width": {
           "type": "integer",
-          "minimum": -9007199254740991,
+          "minimum": 1,
           "maximum": 9007199254740991
         },
         "height": {
           "type": "integer",
-          "minimum": -9007199254740991,
+          "minimum": 1,
           "maximum": 9007199254740991
         }
       },
@@ -157,12 +157,12 @@
       "properties": {
         "sampleRate": {
           "type": "integer",
-          "minimum": -9007199254740991,
+          "minimum": 1,
           "maximum": 9007199254740991
         },
         "channels": {
           "type": "integer",
-          "minimum": -9007199254740991,
+          "minimum": 1,
           "maximum": 9007199254740991
         }
       },
@@ -211,7 +211,7 @@
         },
         "sizeBytes": {
           "type": "integer",
-          "minimum": -9007199254740991,
+          "minimum": 0,
           "maximum": 9007199254740991
         },
         "strategy": {
@@ -262,7 +262,7 @@
                     },
                     "denominator": {
                       "type": "integer",
-                      "minimum": -9007199254740991,
+                      "minimum": 1,
                       "maximum": 9007199254740991
                     }
                   },
@@ -297,7 +297,7 @@
                     },
                     "denominator": {
                       "type": "integer",
-                      "minimum": -9007199254740991,
+                      "minimum": 1,
                       "maximum": 9007199254740991
                     }
                   },
@@ -347,7 +347,7 @@
             },
             "denominator": {
               "type": "integer",
-              "minimum": -9007199254740991,
+              "minimum": 1,
               "maximum": 9007199254740991
             }
           },
@@ -385,7 +385,7 @@
                 },
                 "denominator": {
                   "type": "integer",
-                  "minimum": -9007199254740991,
+                  "minimum": 1,
                   "maximum": 9007199254740991
                 }
               },
@@ -420,7 +420,7 @@
                 },
                 "denominator": {
                   "type": "integer",
-                  "minimum": -9007199254740991,
+                  "minimum": 1,
                   "maximum": 9007199254740991
                 }
               },

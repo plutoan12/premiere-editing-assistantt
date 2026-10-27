@@ -15,8 +15,8 @@ export const SafeIntegerSchema = z
   .int()
   .refine((n) => Number.isSafeInteger(n), "must be a safe integer (|n| <= 2^53 - 1)");
 
-export const NonNegativeIntegerSchema = SafeIntegerSchema.refine((n) => n >= 0, "must be >= 0");
-export const PositiveIntegerSchema = SafeIntegerSchema.refine((n) => n > 0, "must be > 0");
+export const NonNegativeIntegerSchema = SafeIntegerSchema.min(0);
+export const PositiveIntegerSchema = SafeIntegerSchema.min(1);
 
 function isReduced(numerator: number, denominator: number): boolean {
   if (!Number.isSafeInteger(numerator) || !Number.isSafeInteger(denominator) || denominator <= 0) {
