@@ -11,3 +11,4 @@ export * from "./providers.js";
 export * from "./validation.js";
 export * from "./time-json.js";
 export * from "./media-document.js";
+export * from "./timecode.js";
