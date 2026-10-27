@@ -7,3 +7,20 @@ build/
 .DS_Store
 *.log
 coverage/
+
+# Media: never commit real footage. Test fixtures are generated at test time.
+*.mov
+*.mp4
+*.m4v
+*.mxf
+*.avi
+*.mkv
+*.wav
+*.aif
+*.aiff
+*.mp3
+*.flac
+*.prproj
+*.prel
+*.aep
+*.mogrt
