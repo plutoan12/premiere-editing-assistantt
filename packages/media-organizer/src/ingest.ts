@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   canTransitionJob,
+  createRetry,
   promoteArtifact,
   validateBoundedTimeRange,
   encodeMediaTime,
@@ -141,11 +142,7 @@ export async function ingest(
     const previous = state.jobs.find((x) => x.job.id === ctx.retryJobId);
     if (!previous || previous.job.status !== "failed")
       throw new Error("only a failed job can be retried by ID");
-    job = {
-      ...moveJob(previous.job, "queued"),
-      attempt: previous.job.attempt + 1,
-      error: undefined,
-    };
+    job = createRetry(previous.job, makeId(deps.ids));
   } else
     job = {
       id: makeId(deps.ids),
