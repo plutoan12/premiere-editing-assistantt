@@ -13,7 +13,7 @@ await build({
   platform: "browser",
   format: "cjs",
   target: "es2022",
-  external: ["premierepro", "uxp"],
+  external: ["premierepro", "uxp", "os"],
   sourcemap: true,
 });
 for (const file of ["index.html", "manifest.json"])

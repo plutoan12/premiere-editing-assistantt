@@ -9,9 +9,29 @@ import {
 } from "@pea/media-organizer";
 import { preparePreview, type PreviewRow } from "./preview.js";
 import { selectedSourcePaths, type Premiere } from "./premiere.js";
+import { createBinHost, type BinPremiere } from "./bin-host.js";
+import {
+  prepareBinPlan,
+  applyBinPlan,
+  undoBinPlan,
+  type BinPlan,
+} from "./bin-organizer.js";
+import { createJournalStore } from "./bin-journal.js";
 declare const require: (name: string) => any;
 const fs = require("uxp").storage.localFileSystem,
-  ppro = require("premierepro") as Premiere;
+  ppro = require("premierepro") as Premiere & BinPremiere;
+const platform = String(require("os").platform());
+const binHost = createBinHost(
+  ppro,
+  String(require("uxp").host.version),
+  platform,
+);
+const newId = () => crypto.randomUUID();
+let binPlan: BinPlan | undefined;
+const { save: saveJournal, read: readJournal } = createJournalStore(
+  localStorage,
+  platform,
+);
 const el = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
 const status = el("status"),
@@ -19,7 +39,8 @@ const status = el("status"),
   assetSelect = el<HTMLSelectElement>("asset");
 let connection: { baseUrl: string; token: string } | undefined,
   state: CatalogState | undefined,
-  busy = false;
+  busy = false,
+  canCancel = false;
 let preview = new Map<string, PreviewRow>();
 const index = createSearchIndex(),
   rules = defaultRuleSet("d476751f-1b86-46e0-b5b2-0ba7b07fa4c1");
@@ -27,7 +48,11 @@ function buttons() {
   for (const id of ["files", "selection", "refresh", "save"])
     el<HTMLButtonElement>(id).disabled = busy || !connection;
   el<HTMLButtonElement>("connect").disabled = busy;
-  el<HTMLButtonElement>("cancel").disabled = !busy || !connection;
+  el<HTMLButtonElement>("cancel").disabled = !canCancel || !connection;
+  el<HTMLButtonElement>("prepareBins").disabled = busy || !state || !connection;
+  el<HTMLButtonElement>("applyBins").disabled =
+    busy || !binPlan?.moves.length || !connection;
+  el<HTMLButtonElement>("undoBins").disabled = busy;
 }
 async function request(route: string, input?: unknown) {
   if (!connection) throw new Error("먼저 로컬 엔진에 연결하세요.");
@@ -43,6 +68,16 @@ async function request(route: string, input?: unknown) {
   if (!response.ok)
     throw new Error(body.message ?? body.error ?? "로컬 엔진 요청 실패");
   return body;
+}
+async function cancellableRequest(route: string, input: unknown) {
+  canCancel = true;
+  buttons();
+  try {
+    return await request(route, input);
+  } finally {
+    canCancel = false;
+    buttons();
+  }
 }
 function selectedMetadata() {
   if (!state) return;
@@ -94,6 +129,9 @@ function render() {
     `저장된 파일 ${state.assets.length}개 · 검색 결과 ${seen.size}개 · 카탈로그 버전 ${state.revision}`;
 }
 async function accept(catalog: string) {
+  binPlan = undefined;
+  el<HTMLTextAreaElement>("binPreview").value =
+    "Premiere 프로젝트에서 원본을 선택한 뒤 적용안을 확인하세요.";
   state = importCatalog(catalog);
   await index.rebuild(state);
   preview = preparePreview(state, rules);
@@ -122,7 +160,7 @@ function run(action: () => Promise<void>) {
     } catch (e) {
       status.textContent = e instanceof Error ? e.message : String(e);
     } finally {
-      busy = false;
+      ((busy = false), (canCancel = false));
       buttons();
     }
   };
@@ -153,7 +191,7 @@ async function register(paths: string[]) {
     return;
   }
   status.textContent = `${paths.length}개 파일을 읽는 중입니다…`;
-  const response = await request("/ingest", { paths });
+  const response = await cancellableRequest("/ingest", { paths });
   await accept(response.catalog);
   const counts: Record<string, number> = {};
   for (const item of response.result.items)
@@ -205,7 +243,8 @@ el("refresh").addEventListener(
 el("cancel").addEventListener("click", async () => {
   try {
     await request("/cancel", {});
-    status.textContent = "중지 요청을 보냈습니다. 완료된 파일은 저장됩니다.";
+    status.textContent =
+      "원본 확인 중지를 요청했습니다. 완료된 파일 등록은 저장됩니다.";
   } catch (e) {
     status.textContent = String(e);
   }
@@ -240,3 +279,60 @@ el("save").addEventListener(
 el("query").addEventListener("input", render);
 assetSelect.addEventListener("change", selectedMetadata);
 buttons();
+
+el("prepareBins").addEventListener(
+  "click",
+  run(async () => {
+    binPlan = undefined;
+    await accept((await request("/catalog")).catalog);
+    const tree = await binHost.read();
+    const previous = readJournal(tree);
+    if (previous && ["applying", "undoing"].includes(previous.status))
+      throw Error(
+        "중단된 분류 기록이 있습니다. 최근 분류 되돌리기를 먼저 실행하세요.",
+      );
+    binPlan = prepareBinPlan(state!, rules, tree, newId);
+    el<HTMLTextAreaElement>("binPreview").value = binPlan.moves.length
+      ? binPlan.moves
+          .map((m) => `${m.before.name}\n${m.pathSegments.join(" / ")}`)
+          .join("\n\n")
+      : "선택한 클립이 이미 분류 위치에 있습니다. 변경할 항목이 없습니다.";
+    status.textContent = `선택 원본 ${tree.selectedIds.length}개 · 이동 ${binPlan.moves.length}개. 적용하면 이 프로젝트의 최근 되돌리기 기록을 교체합니다.`;
+  }),
+);
+el("applyBins").addEventListener(
+  "click",
+  run(async () => {
+    if (!binPlan) return;
+    const plan = binPlan;
+    binPlan = undefined;
+    status.textContent = "적용 전 원본 내용을 확인하는 중입니다…";
+    await cancellableRequest("/verify-sources", {
+      revision: plan.hostPlan.expectedContext.catalogRevision,
+      sources: plan.moves.map((m) => ({
+        assetId: m.assetId,
+        path: m.before.sourcePath,
+      })),
+    });
+    await applyBinPlan(plan, binHost, saveJournal);
+    status.textContent = `${plan.moves.length}개 클립의 Bin 이동을 확인했습니다. 최근 분류 되돌리기로 원래 위치에 복원할 수 있습니다.`;
+  }),
+);
+el("undoBins").addEventListener(
+  "click",
+  run(async () => {
+    binPlan = undefined;
+    const tree = await binHost.read(),
+      journal = readJournal(tree);
+    if (!journal || journal.status === "undone")
+      throw Error("이 프로젝트에 되돌릴 분류 기록이 없습니다.");
+    const result = await undoBinPlan(journal, binHost, saveJournal);
+    el<HTMLTextAreaElement>("binPreview").value =
+      "최근 분류를 되돌렸습니다. 적용하려면 새 적용안을 확인하세요.";
+    status.textContent =
+      "클립을 원래 Bin으로 복원했습니다." +
+      (result.retainedBins.length
+        ? ` 변경됐거나 비어 있지 않은 Bin ${result.retainedBins.length}개는 보존했습니다.`
+        : "");
+  }),
+);

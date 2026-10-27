@@ -144,7 +144,7 @@ export async function createMediaServer(options: MediaServerOptions) {
     }
     if (
       req.method !== "POST" ||
-      !["/ingest", "/metadata"].includes(route ?? "")
+      !["/ingest", "/metadata", "/verify-sources"].includes(route ?? "")
     ) {
       send(res, 404, { error: "NOT_FOUND" });
       return;
@@ -159,6 +159,75 @@ export async function createMediaServer(options: MediaServerOptions) {
     writer = true;
     try {
       const raw = await body(req);
+      if (route === "/verify-sources") {
+        const input = z
+          .object({
+            revision: z.number().int().nonnegative(),
+            sources: z
+              .array(
+                z
+                  .object({
+                    assetId: z.uuid(),
+                    path: pathsSchema.shape.paths.element,
+                  })
+                  .strict(),
+              )
+              .min(1)
+              .max(500),
+          })
+          .strict()
+          .parse(raw);
+        const current = await store.read();
+        if (current.revision !== input.revision)
+          throw new CatalogConflictError(
+            "카탈로그가 변경됐습니다. 적용안을 다시 확인하세요.",
+          );
+        const controller = new AbortController();
+        active = controller;
+        const abort = () => {
+          if (!res.writableFinished) controller.abort();
+        };
+        res.once("close", abort);
+        try {
+          const files = createFiles(),
+            checked = new Set<string>();
+          for (const source of input.sources) {
+            const uri = pathToFileURL(source.path).href;
+            const asset = current.assets.find(
+              (a) => a.asset.id === source.assetId,
+            );
+            if (
+              !asset ||
+              !asset.locations.includes(uri) ||
+              asset.availability !== "online" ||
+              asset.sourceState !== "verified" ||
+              !asset.asset.fingerprint
+            )
+              throw new CatalogConflictError(
+                "원본 등록 상태가 변경됐습니다. 다시 분석하세요.",
+              );
+            if (checked.has(uri)) continue;
+            let hash: string;
+            try {
+              hash = await files.sha256(uri, { signal: controller.signal });
+            } catch {
+              throw new CatalogConflictError(
+                "원본을 확인하지 못했습니다. 다시 분석하세요.",
+              );
+            }
+            if (hash !== asset.asset.fingerprint.value)
+              throw new CatalogConflictError(
+                "원본 내용이 변경됐습니다. 다시 분석하세요.",
+              );
+            checked.add(uri);
+          }
+          send(res, 200, { verified: true, revision: current.revision });
+        } finally {
+          res.off("close", abort);
+          active = undefined;
+        }
+        return;
+      }
       if (route === "/metadata") {
         const edit = editSchema.parse(raw),
           current = await store.read();
