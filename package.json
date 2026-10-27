@@ -1,1 +1,17 @@
-{"name":"premiere-editing-assistantt","private":true,"packageManager":"pnpm@10.17.1","scripts":{"test":"pnpm -r test","typecheck":"pnpm -r typecheck"},"devDependencies":{"typescript":"^5.9.2","vitest":"^3.2.4"}}
+{
+  "name": "premiere-editing-assistantt",
+  "private": true,
+  "packageManager": "pnpm@10.17.1",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4",
+    "eslint": "^10.0.0",
+    "typescript-eslint": "^8.46.0"
+  },
+  "type": "module"
+}
