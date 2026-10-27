@@ -3,7 +3,7 @@
 **Date:** 2026-10-27
 **Status:** Accepted
 **Deciders:** project owner
-**Related:** `docs/superpowers/specs/2026-10-03-premiere-editing-assistant-platform-design.md` (Open Decisions)
+**Related:** `docs/superpowers/specs/2026-10-03-premiere-editing-assistant-platform-design.md` (Decision Records); `docs/superpowers/specs/2026-10-03-premiere-local-pipeline-design.md` on the `feat/core-contracts` integration branch, which already specifies the UXP panel, the loopback token-authenticated native helper and its HTTP job contract. This ADR records the same direction at platform level; the "sidecar" here is that native helper.
 
 ## Context
 The platform needs a Premiere Pro-facing UI (`apps/premiere-panel`) and a place to run the engines (sync, media analysis, STT, rough cut, audio, delivery). Those engines depend on Node.js, native binaries (ffmpeg/ffprobe-class tools), large local files and long-running CPU/GPU work.
