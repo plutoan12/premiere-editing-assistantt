@@ -6,6 +6,7 @@ Modular post-production automation platform. Premiere Pro is the first NLE integ
 
 ## Documents
 - Architecture spec: `docs/superpowers/specs/2026-10-03-premiere-editing-assistant-platform-design.md`
+- Decision records: `docs/adr/`
 - Core contracts plan: `docs/superpowers/plans/2026-10-03-core-contracts.md`
 
 ## Non-negotiable rules

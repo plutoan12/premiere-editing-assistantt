@@ -22,7 +22,7 @@ The system has four layers:
 - **Core:** canonical project, media, time, transcript, analysis, edit-decision, artifact and job models.
 - **Engines:** seven NLE-independent workflows.
 - **Adapters:** translate canonical data to/from an NLE. Premiere is the first adapter.
-- **App:** Premiere-facing UI and orchestration.
+- **App:** Premiere-facing UXP panel plus a local sidecar service that hosts Core, the engines and the adapters. The panel owns UI and Premiere project reads/writes; the sidecar owns all processing. See `docs/adr/0001-premiere-host-runtime-uxp.md`.
 
 No engine may import Premiere-specific code. Premiere behavior belongs under `adapters/premiere`.
 
@@ -120,6 +120,8 @@ Cache deterministic and AI analysis using media/content fingerprints plus config
 ## Premiere Adapter
 The adapter maps canonical entities to Premiere-compatible project operations/data, including media IDs, bins, metadata, markers, sequences, captions/titles, MOGRT references, edit decisions and export handoff.
 
+It runs in the sidecar and emits a serialized, versioned Premiere operation plan. The UXP panel validates the plan against the schema and the live project, executes it through the UXP Premiere API, and reports per-step results. Operations the UXP API cannot perform fall back to generated files imported through the panel (ADR-0001).
+
 It must not own sync algorithms, STT, semantic analysis or rough-cut logic.
 
 ## Failure and Safety Rules
@@ -141,6 +143,7 @@ It must not own sync algorithms, STT, semantic analysis or rough-cut logic.
 ```text
 apps/
   premiere-panel/
+  sidecar/
 packages/
   core/
   sync/
@@ -159,6 +162,7 @@ prompts/
   localization/
 schemas/
 docs/
+  adr/
   superpowers/
     specs/
     plans/
@@ -178,8 +182,8 @@ tests/
 
 Each engine receives its own implementation plan and remains independently testable.
 
-## Open Decisions
-- **Premiere host runtime (UXP vs CEP).** UXP has no Node.js runtime, so with UXP the engines must run in a local sidecar process and the panel talks to it over IPC/HTTP; CEP allows engines inside the panel process. The choice decides how Job progress, cancellation and artifacts cross the process boundary. It must be settled in an ADR before the Premiere adapter plan is written. Core contracts are transport-agnostic, so this decision does not block Core.
+## Decision Records
+- **Premiere host runtime: UXP with a local sidecar.** Decided in `docs/adr/0001-premiere-host-runtime-uxp.md`. The panel is a UXP plugin; engines run in a Node.js sidecar reached over token-authenticated loopback HTTP/WebSocket; Premiere writes are executed from validated operation plans. Core contracts are transport-agnostic, so this decision does not change the Core plan.
 
 ## Future NLEs
 Final Cut Pro and DaVinci Resolve are future adapters. Supporting them must not require engine rewrites; incompatible contract changes require explicit schema versioning/migrations.
